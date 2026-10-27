@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -285,7 +286,7 @@ const hit=o=>{if(!q)return true;const qd=q.replace(/\D/g,"");return Object.value
 const isAdmin=()=>cur&&cur.role==="admin";
 const isDeputy=()=>cur&&cur.role==="deputy",isLead=()=>isAdmin()||isDeputy(),roleName=r=>r==="admin"?"Руководитель":r==="deputy"?"Зам. руководителя":"Менеджер";
 const seeAll=()=>isLead()||(cur&&cur.vis==="all"),pCreate=()=>isLead()||(cur&&cur.pc!==false),pEditAll=()=>isLead()||(cur&&cur.pe===true),pDel=()=>isLead()||(cur&&cur.pd===true);
-const mine=()=>S.deals.filter(d=>(!seeAll()||own)?d.manager===cur.id:(flt==="all"||(flt==="none"?!U(d.manager):d.manager===flt))).filter(d=>!d.arch||showArch||q).filter(d=>hit({a:d.num,b:d.title,c:d.org,d:d.inn,e:d.phone,f:d.email,g:d.rname,h:d.rphone,i:d.addr,j:d.url,k:(d.contacts||[]).map(c=>(c.n||"")+" "+(c.p||"")).join(" ")}));
+const mine=()=>S.deals.filter(d=>(!seeAll()||own)?d.manager===cur.id:(flt==="all"||(flt==="none"?!U(d.manager):d.manager===flt))).filter(d=>!d.arch||showArch||q).filter(d=>hit({a:d.num,b:d.title,c:d.org,d:d.inn,e:d.phone,f:d.email,g:d.rname,h:d.rphone,i:d.addr,j:d.url,k:(d.contacts||[]).map(c=>(c.n||"")+" "+(c.p||"")+" "+(c.e||"")).join(" ")}));
 
 
 
@@ -502,8 +503,8 @@ ${odView(d)}${d.note?`<div class="cnote nc-${d.nc||"none"}"><small>Коммен�
 <div class="tg vcols"><div class="vl">
 <section class="vc"><div class="vh">Сумма и маржа</div>${mgBox(d,can)}</section>
 <section class="vc"><div class="vh">О закупке</div><div class="vg">${f("Дата завершения",d.due?(isDueToday(d)?`<b class="td">🚨 ${fmtD(d.due)}</b>`:fmtD(d.due)):"не заполнено","due","date")}${f("ИНН",esc(d.inn||"не заполнено"))}${f("Ответственный",`<span class="rs">${av(d.manager)} ${esc(U(d.manager)?.name||"Не назначен")}</span>`)}${f("Ссылка",d.url?`<a class="lnk" href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.url.replace(/^https?:\/\//,""))}</a>`:"не заполнено","url","url")}</div></section>
-<section class="vc"><div class="vh">Доставка</div><div class="vg">${f("Адрес доставки",d.addr?esc(d.addr).replace(/\n/g,"<br>"):"не заполнено","addr","area")}${f("Получатель",esc(d.rname||"не заполнено"),"rname","text")}${f("Телефон получателя",d.rphone?`<a class="lnk" href="tel:${esc(d.rphone.replace(/[^\d+]/g,""))}">${esc(d.rphone)}</a>`:"не заполнено","rphone","tel")}</div></section>
-<section class="vc"><div class="vh">Клиент</div><div class="vcl">${d.org?`<div>${orgLink(d)}</div>`:`<div class="mu">не заполнено</div>`}</div><div class="vg" style="margin-top:10px">${f("Телефон",d.phone?`<a class="lnk" href="tel:${esc(String(d.phone).replace(/[^\d+]/g,""))}">${esc(d.phone)}</a>`:"не заполнено","phone","tel")}${f("Email",d.email?`<a class="lnk" href="mailto:${esc(d.email)}">${esc(d.email)}</a>`:"не заполнено","email","text")}</div>${emView(d,can)}${ctView(d,can)}</section>
+<section class="vc"><div class="vh">Доставка</div><div class="vg">${f("Адрес доставки",d.addr?esc(d.addr).replace(/\n/g,"<br>"):"не заполнено","addr","area")}${f("Получатель",esc(d.rname||"не заполнено"),"rname","text")}${f("Телефон получателя",d.rphone?`<a class="lnk" href="tel:${esc(telH(d.rphone))}">${esc(d.rphone)}</a>`:"не заполнено","rphone","tel")}</div></section>
+<section class="vc"><div class="vh">Клиент</div><div class="vcl">${d.org?`<div>${orgLink(d)}</div>`:`<div class="mu">не заполнено</div>`}</div><div class="vg" style="margin-top:10px">${f("Телефон",d.phone?`<a class="lnk" href="tel:${esc(telH(d.phone))}">${esc(d.phone)}</a>`:"не заполнено","phone","tel")}${f("Email",d.email?`<a class="lnk" href="mailto:${esc(d.email)}">${esc(d.email)}</a>`:"не заполнено","email","text")}</div>${emView(d,can)}${ctView(d,can)}</section>
 <section class="vc"><div class="vh">Файлы и спецификации</div><div id="fl" class="fls"></div>${can?`<button type="button" class="btn ghost" id="fup">+ Прикрепить файл</button>`:""}</section></div>
 <div class="vr2"><section class="vc"><div class="cm" style="border:0;margin:0;padding:0"><div class="vh">Комментарии</div><textarea id="ct" placeholder="Оставьте комментарий, например: перезвонить завтра после 14:00"></textarea><div class="acts"><button type="button" class="btn ghost" id="cadd">Добавить комментарий</button></div><div class="box" id="cm"></div></div></section>
 <section class="vc"><div class="vh">Задачи по закупке</div><div id="tkd"></div><button type="button" class="btn ghost" id="tka">+ Поставить задачу</button></section></div></div>
@@ -519,7 +520,7 @@ if(!it)return;
 const ms=S.users.filter(u=>u.active!==false||u.id===it.manager);
 $("#frm").innerHTML=`<div class="dh"><button type="button" class="ib" id="back">←</button><h2>${id?"Редактирование"+(it.num?" № "+esc(it.num):""):"Новая закупка"}</h2></div>
 <div class="g2"><label>Номер закупки<input name="num" value="${esc(it.num)}" autocomplete="off"></label>
-<label>Сумма (НМЦК), ₽<input name="amount" type="number" min="0" value="${esc(it.amount)}"></label></div>
+<label>Сумма закупки, ₽<input name="amount" type="number" min="0" value="${esc(it.amount)}"></label></div>
 <input name="cost" type="hidden" value="${esc(it.cost||"")}">
 <div class="mgp" id="mgp">${mgBox({amount:it.amount,cost:it.cost},true)}</div>
 <label>Краткое название<input name="title" value="${esc(it.title)}" placeholder="Поставка моноблоков"></label>
@@ -527,13 +528,13 @@ $("#frm").innerHTML=`<div class="dh"><button type="button" class="ib" id="back">
 <div class="g2"><label>Организация (заказчик)<input name="org" list="ol" value="${esc(it.org)}" autocomplete="off"><datalist id="ol">${S.orgs.map(o=>`<option value="${esc(o.name)}">`).join("")}</datalist></label>
 <label>ИНН (10 или 12 цифр)<input name="inn" value="${esc(it.inn)}" inputmode="numeric" maxlength="12" autocomplete="off"></label></div>
 <div id="hint"></div>
-<div class="g2"><label>Телефон<input name="phone" type="tel" placeholder="+7 (___) ___-__-__" inputmode="tel" value="${esc(it.phone)}"></label><label>Email<input name="email" value="${esc(it.email)}" inputmode="email" autocapitalize="off"></label></div>
+<div class="g2"><label>Телефон<input name="phone" type="tel" placeholder="+7 (___) ___-__-__ доб." inputmode="tel" value="${esc(it.phone)}"></label><label>Email<input name="email" value="${esc(it.email)}" inputmode="email" autocapitalize="off"></label></div>
 <div class="cts"><div class="vh" style="margin:0 0 8px">Другие почты</div><div id="eml">${(it.emails||[]).map(emRow).join("")}</div><button type="button" class="btn ghost" id="ema">+ Добавить почту</button></div>
-<div class="cts"><div class="vh" style="margin:0 0 8px">Другие телефоны (чей номер)</div><div id="ctl">${(it.contacts||[]).map(ctRow).join("")}</div><button type="button" class="btn ghost" id="cta">+ Добавить телефон</button></div>
+<div class="cts"><div class="vh" style="margin:0 0 8px">Контактные лица (имя, телефон, почта)</div><div id="ctl">${(it.contacts||[]).map(ctRow).join("")}</div><button type="button" class="btn ghost" id="cta">+ Добавить контакт</button></div>
 <div class="nbx"><label>Комментарий по заказчику (необязательно)<textarea name="note" rows="2" placeholder="Например: обманули, не платит / очень дорогие, берут охотно" style="min-height:54px;resize:vertical">${esc(it.note||"")}</textarea></label><div class="ncs">${[["","Без цвета"],["red","🔴 Красный"],["green","🟢 Зелёный"]].map(([v,t])=>`<label class="ncp"><input type="radio" name="nc" value="${v}" ${(it.nc||"")===v?"checked":""}><span>${t}</span></label>`).join("")}</div></div>
 <label>Дата завершения<input name="due" type="date" value="${esc(it.due||"")}"></label>
 <label>Адрес доставки<textarea name="addr" rows="2" placeholder="Город, улица, дом, офис" style="min-height:54px;resize:vertical">${esc(it.addr||"")}</textarea></label>
-<div class="g2"><label>Получатель (ФИО)<input name="rname" value="${esc(it.rname||"")}" autocomplete="off"></label><label>Телефон получателя<input name="rphone" type="tel" placeholder="+7 (___) ___-__-__" inputmode="tel" value="${esc(it.rphone||"")}"></label></div>
+<div class="g2"><label>Получатель (ФИО)<input name="rname" value="${esc(it.rname||"")}" autocomplete="off"></label><label>Телефон получателя<input name="rphone" type="tel" placeholder="+7 (___) ___-__-__ доб." inputmode="tel" value="${esc(it.rphone||"")}"></label></div>
 <div class="g2"><label>Этап<select name="stage">${stages().map(([k,n])=>`<option value="${k}" ${it.stage===k?"selected":""}>${esc(n)}</option>`).join("")}</select></label>
 ${isLead()?`<label>Менеджер<select name="manager"><option value="">Не назначен</option>${ms.map(u=>`<option value="${u.id}" ${it.manager===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>`:""}</div>
 ${isAdmin()&&ms.length<2?`<p class="mu">Чтобы назначить менеджера, добавьте сотрудника в Админ-панели.</p>`:""}
@@ -570,7 +571,7 @@ $("#cancel").onclick=()=>$("#dlg").close();
 if(id&&pDel())$("#del").onclick=async()=>{if(!await askc("Удалить закупку?"))return;try{await lim(db.doc("deals/"+id).delete());$("#dlg").close()}catch(e){setErr("Не удалось удалить: "+(e.message||e))}};
 fm.onsubmit=async e=>{e.preventDefault();setErr("");
 const f=Object.fromEntries(new FormData(fm));
-const d={num:f.num.trim(),title:f.title.trim(),org:f.org.trim(),inn:f.inn.replace(/\D/g,""),url:f.url.trim(),phone:npn(f.phone),contacts:[...fm.querySelectorAll(".ctr")].map(r=>({n:r.querySelector("[name=cn]").value.trim(),p:npn(r.querySelector("[name=cp]").value)})).filter(c=>c.p||c.n),email:f.email.trim(),emails:[...fm.querySelectorAll(".emr [name=ex]")].map(i=>i.value.trim()).filter(Boolean),note:(f.note||"").trim(),nc:(f.note||"").trim()?(f.nc||""):"",stage:f.stage,due:f.due||"",addr:(f.addr||"").trim(),rname:(f.rname||"").trim(),rphone:npn(f.rphone),amount:+f.amount||0,cost:+f.cost||0,manager:isLead()?(f.manager||""):(it.manager||"")};
+const d={num:f.num.trim(),title:f.title.trim(),org:f.org.trim(),inn:f.inn.replace(/\D/g,""),url:f.url.trim(),phone:npn(f.phone),contacts:[...fm.querySelectorAll(".ctr")].map(r=>({n:r.querySelector("[name=cn]").value.trim(),p:npn(r.querySelector("[name=cp]").value),e:((r.querySelector("[name=ce]")||{}).value||"").trim()})).filter(c=>c.p||c.n||c.e),email:f.email.trim(),emails:[...fm.querySelectorAll(".emr [name=ex]")].map(i=>i.value.trim()).filter(Boolean),note:(f.note||"").trim(),nc:(f.note||"").trim()?(f.nc||""):"",stage:f.stage,due:f.due||"",addr:(f.addr||"").trim(),rname:(f.rname||"").trim(),rphone:npn(f.rphone),amount:+f.amount||0,cost:+f.cost||0,manager:isLead()?(f.manager||""):(it.manager||"")};
 const miss=FIELDS.filter(([k])=>S.req[k]&&!(k==="amount"?f.amount!=="":d[k])).map(x=>x[1]);
 if(miss.length)return setErr("Заполните обязательные поля: "+miss.join(", ")+".");
 if(!d.num&&!d.title&&!d.org)return setErr("Укажите хотя бы номер, название или организацию.");
@@ -578,6 +579,7 @@ if(!d.num&&!d.title&&!d.org)return setErr("Укажите хотя бы номе
 if(d.inn&&d.inn.length!==10&&d.inn.length!==12)return setErr("ИНН — 10 или 12 цифр (или оставьте поле пустым).");
 if(d.email&&!/^\S+@\S+\.\S+$/.test(d.email))return setErr("Проверьте email.");
 if(d.emails.some(x=>!/^\S+@\S+\.\S+$/.test(x)))return setErr("Проверьте дополнительные email.");
+if(d.contacts.some(c=>c.e&&!/^\S+@\S+\.\S+$/.test(c.e)))return setErr("Проверьте email у контактных лиц.");
 if(d.url&&!/^https?:\/\//i.test(d.url))d.url="https://"+d.url;
 const b=$("#save");b.disabled=true;b.textContent="Сохраняю…";
 try{
@@ -637,7 +639,7 @@ const list=id?S.deals.filter(d=>d.org===it.name):[];
 $("#frm").innerHTML=`<h2>${id?"Организация":"Новая организация"}</h2>
 <label>Название<input name="name" value="${esc(it.name)}"></label>
 <label>ИНН (10 или 12 цифр)<input name="inn" value="${esc(it.inn)}" inputmode="numeric" maxlength="12"></label>
-<div class="g2"><label>Телефон<input name="phone" type="tel" placeholder="+7 (___) ___-__-__" inputmode="tel" value="${esc(it.phone)}"></label><label>Email<input name="email" value="${esc(it.email)}" inputmode="email" autocapitalize="off"></label></div>
+<div class="g2"><label>Телефон<input name="phone" type="tel" placeholder="+7 (___) ___-__-__ доб." inputmode="tel" value="${esc(it.phone)}"></label><label>Email<input name="email" value="${esc(it.email)}" inputmode="email" autocapitalize="off"></label></div>
 ${id?`<div class="hs"><b>Закупки организации (${list.length})</b>${list.length?list.sort((a,b)=>(b.created||0)-(a.created||0)).map(d=>`<div><button type="button" class="lnk" data-open="${d.id}">${d.num?"№ "+esc(d.num):"Без номера"} · ${esc(d.title||"Без названия")}</button> <small>${esc(stN(d.stage))} · ${fmt(d.created)}</small></div>`).join(""):`<div class="mu">Пока нет.</div>`}</div>`:""}
 <div class="err" id="err"></div>
 <div class="acts">${id&&isAdmin()?`<button type="button" class="btn del" id="del">Удалить</button>`:""}<button type="button" class="btn ghost" id="cancel">Закрыть</button><button type="submit" class="btn" id="save">Сохранить</button></div>`;
@@ -782,7 +784,8 @@ sync();ap();})();
 
 /* телефон: всегда +7, российский формат */
 function npn(v){v=String(v||"").trim();return v==="+7"?"":v}
-function fmtPh(v){let d=String(v||"").replace(/\D/g,"");if(d[0]==="7"||d[0]==="8")d=d.slice(1);if(d.length>10&&(d[0]==="7"||d[0]==="8"))d=d.slice(1);d=d.slice(0,10);let r="+7";if(d.length)r+=" ("+d.slice(0,3);if(d.length>=3)r+=")";if(d.length>3)r+=" "+d.slice(3,6);if(d.length>6)r+="-"+d.slice(6,8);if(d.length>8)r+="-"+d.slice(8,10);return r}
+function telH(t){t=String(t||"");const i=t.search(/доб/i);return(i<0?t:t.slice(0,i)).replace(/[^\d+]/g,"")+(i<0?"":",,"+t.slice(i).replace(/\D/g,""))}
+function fmtPh(v){let d=String(v||"").replace(/\D/g,"");if(d[0]==="7"||d[0]==="8")d=d.slice(1);const x=d.slice(10,16);d=d.slice(0,10);let r="+7";if(d.length)r+=" ("+d.slice(0,3);if(d.length>=3)r+=")";if(d.length>3)r+=" "+d.slice(3,6);if(d.length>6)r+="-"+d.slice(6,8);if(d.length>8)r+="-"+d.slice(8,10);if(x)r+=" доб. "+x;return r}
 document.addEventListener("focusin",e=>{const t=e.target;if(t.matches&&t.matches("input[type=tel]")){t.value=t.value?fmtPh(t.value):"+7";t.dataset.pv=t.value;setTimeout(()=>{try{t.setSelectionRange(t.value.length,t.value.length)}catch(_){}},0)}});
 document.addEventListener("input",e=>{const t=e.target;if(!(t.matches&&t.matches("input[type=tel]")))return;let o=fmtPh(t.value);if(e.inputType==="deleteContentBackward"&&o===t.dataset.pv&&o.length>2)o=fmtPh("7"+o.replace(/\D/g,"").slice(1,-1));t.value=o;t.dataset.pv=o});
 
@@ -882,7 +885,7 @@ return new Blob([lh.buffer,nb,u8,ch.buffer,nb,en.buffer],{type:"application/zip"
 async function fileSave(name,u8,type){dlBlob(name,u8,type);toast("Файл сохранён")}
 
 /* несколько телефонов с именами */
-const ctRow=c=>`<div class="ctr"><input name="cn" placeholder="Чей номер (имя)" value="${esc((c&&c.n)||"")}" autocomplete="off"><input name="cp" type="tel" placeholder="+7 (___) ___-__-__" inputmode="tel" value="${esc((c&&c.p)||"")}"><button type="button" class="ib2" data-cx>✕</button></div>`;
+const ctRow=c=>`<div class="ctr"><input name="cn" placeholder="Имя человека" value="${esc((c&&c.n)||"")}" autocomplete="off"><input name="cp" type="tel" placeholder="+7 (___) ___-__-__ доб." inputmode="tel" value="${esc((c&&c.p)||"")}"><input name="ce" type="email" placeholder="Почта" inputmode="email" autocapitalize="off" value="${esc((c&&c.e)||"")}"><button type="button" class="ib2" data-cx>✕</button></div>`;
 async function savePhoto(d){try{await lim(db.doc("users/"+cur.id).update({photo:d}));const u=U(cur.id);if(u)u.photo=d;const b=document.getElementById("avb");if(b)b.innerHTML=av(cur.id);toast(d?"Фото сохранено":"Фото удалено")}catch(e){toast("Не удалось сохранить фото")}}
 async function changePhoto(){const u=U(cur.id);if(u&&u.photo){const m=await dlgAsk("Фото профиля",["Отмена","Удалить фото","Выбрать фото"]);if(m===1){await savePhoto("");return}if(m!==2)return}
 const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=()=>{const f=i.files[0];if(!f)return;const im=new Image(),url=URL.createObjectURL(f);im.onload=()=>{const Z=160,c=document.createElement("canvas");c.width=c.height=Z;const x=c.getContext("2d"),q=Math.min(im.width,im.height);x.drawImage(im,(im.width-q)/2,(im.height-q)/2,q,q,0,0,Z,Z);URL.revokeObjectURL(url);savePhoto(c.toDataURL("image/jpeg",.82))};im.onerror=()=>toast("Не удалось открыть фото");im.src=url};i.click()}
@@ -913,16 +916,16 @@ try{
 if(ok){const id=ok.dataset.emok,d=S.deals.find(z=>z.id===id);if(!d)return;const v=ok.closest(".emr").querySelector("input").value.trim();if(!/^\S+@\S+\.\S+$/.test(v))return toast("Проверьте email");const arr=[...(d.emails||[]),v];await lim(db.doc("deals/"+id).update({emails:arr}));d.emails=arr;viewDeal(id)}
 else if(del){const id=del.dataset.emdel,d=S.deals.find(z=>z.id===id);if(!d)return;const arr=(d.emails||[]).filter((_,i)=>i!==+del.dataset.i);await lim(db.doc("deals/"+id).update({emails:arr}));d.emails=arr;viewDeal(id)}
 }catch(er){toast("Не удалось сохранить: "+(er.message||er))}});
-function ctView(d,can){const l=d.contacts||[];if(!l.length&&!can)return"";return `<div class="ctv"><div class="vh" style="margin:0 0 8px">Другие телефоны</div>${l.map((c,i)=>`<div class="ct1"><span class="ctn">${esc(c.n||"Без имени")}</span><a class="lnk" href="tel:${esc(String(c.p||"").replace(/[^\d+]/g,""))}">${esc(c.p||"")}</a>${can?`<button type="button" class="ctx" data-ctdel="${d.id}" data-i="${i}">✕</button>`:""}</div>`).join("")}${can?`<button type="button" class="btn ghost" data-ctq="${d.id}">+ Добавить телефон</button>`:""}</div>`}
+function ctView(d,can){const l=d.contacts||[];if(!l.length&&!can)return"";return `<div class="ctv"><div class="vh" style="margin:0 0 8px">Контактные лица (имя, телефон, почта)</div>${l.map((c,i)=>`<div class="ct1"><span class="ctn">${esc(c.n||"Без имени")}</span>${c.p?`<a class="lnk" href="tel:${esc(telH(c.p))}">${esc(c.p)}</a>`:""}${c.e?`<a class="lnk" href="mailto:${esc(c.e)}">${esc(c.e)}</a>`:""}${can?`<button type="button" class="ctx" data-ctdel="${d.id}" data-i="${i}">✕</button>`:""}</div>`).join("")}${can?`<button type="button" class="btn ghost" data-ctq="${d.id}">+ Добавить контакт</button>`:""}</div>`}
 document.addEventListener("click",async e=>{
 const a=e.target.closest("#cta"),x=e.target.closest("[data-cx]"),q=e.target.closest("[data-ctq]"),no=e.target.closest("[data-ctno]"),ok=e.target.closest("[data-ctok]"),del=e.target.closest("[data-ctdel]");
 if(a){const l=document.getElementById("ctl");l.insertAdjacentHTML("beforeend",ctRow({}));l.lastElementChild.querySelector("[name=cn]").focus();return}
 if(x){x.closest(".ctr").remove();return}
-if(q){q.outerHTML=`<div class="ctr ctnew"><input name="cn" placeholder="Чей номер (имя)" autocomplete="off"><input name="cp" type="tel" placeholder="+7 (___) ___-__-__" inputmode="tel"><button type="button" class="btn" data-ctok="${q.dataset.ctq}">Сохранить</button><button type="button" class="btn ghost" data-ctno="${q.dataset.ctq}">Отмена</button></div>`;document.querySelector(".ctnew [name=cn]").focus();return}
+if(q){q.outerHTML=`<div class="ctr ctnew"><input name="cn" placeholder="Имя человека" autocomplete="off"><input name="cp" type="tel" placeholder="+7 (___) ___-__-__ доб." inputmode="tel"><input name="ce" type="email" placeholder="Почта" inputmode="email" autocapitalize="off"><button type="button" class="btn" data-ctok="${q.dataset.ctq}">Сохранить</button><button type="button" class="btn ghost" data-ctno="${q.dataset.ctq}">Отмена</button></div>`;document.querySelector(".ctnew [name=cn]").focus();return}
 if(no){viewDeal(no.dataset.ctno);return}
 try{
-if(ok){const id=ok.dataset.ctok,d=S.deals.find(z=>z.id===id);if(!d)return;const r=ok.closest(".ctr"),n=r.querySelector("[name=cn]").value.trim(),p=npn(r.querySelector("[name=cp]").value);if(!p)return toast("Введите номер телефона");
-const arr=[...(d.contacts||[]),{n,p}];await lim(db.doc("deals/"+id).update({contacts:arr}));d.contacts=arr;viewDeal(id)}
+if(ok){const id=ok.dataset.ctok,d=S.deals.find(z=>z.id===id);if(!d)return;const r=ok.closest(".ctr"),n=r.querySelector("[name=cn]").value.trim(),p=npn(r.querySelector("[name=cp]").value),e=r.querySelector("[name=ce]").value.trim();if(!p&&!e&&!n)return toast("Введите имя, телефон или почту");if(e&&!/^\S+@\S+\.\S+$/.test(e))return toast("Проверьте email");
+const arr=[...(d.contacts||[]),{n,p,e}];await lim(db.doc("deals/"+id).update({contacts:arr}));d.contacts=arr;viewDeal(id)}
 else if(del){const id=del.dataset.ctdel,d=S.deals.find(z=>z.id===id);if(!d)return;const arr=(d.contacts||[]).filter((_,i)=>i!==+del.dataset.i);await lim(db.doc("deals/"+id).update({contacts:arr}));d.contacts=arr;viewDeal(id)}
 }catch(er){toast("Не удалось сохранить: "+(er.message||er))}});
 /* закрытие карточки кликом по пустому месту слева */
@@ -1063,7 +1066,7 @@ else if(m===1){const i=document.createElement("input");i.type="file";i.accept=".
 
 (function(){try{localStorage.setItem("blx-t","1");localStorage.removeItem("blx-t")}catch(e){const d=document.createElement("div");d.style.cssText="position:fixed;bottom:0;left:0;right:0;background:#e0443c;color:#fff;padding:8px 12px;z-index:99;text-align:center";d.textContent="Браузер не разрешает хранить данные: всё пропадёт при закрытии вкладки. Откройте файл в Chrome, Edge или Яндекс Браузере.";document.body.appendChild(d)}})();
 </script>
- <style>
+<style>
 .cm .c .cx,.card .last,.cnote div,.cnl{font-weight:700}
 .msel{width:auto;max-width:150px;padding:4px 6px;font-size:12.5px;border-radius:8px}
 .dz{outline:2px dashed var(--ac);outline-offset:3px}
@@ -1073,22 +1076,11 @@ else if(m===1){const i=document.createElement("input");i.type="file";i.accept=".
 /* ===== ПРАВКИ ОРБИТЫ ===== */
 (function(){
 const on=e=>e.dataTransfer&&[...e.dataTransfer.types].includes("Files");
-
-/* иконка сайта на вкладке браузера */
 {const s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset="1" stop-color="#8b3fe6"/></linearGradient><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#cfe0ff"/></linearGradient></defs><circle cx="32" cy="32" r="31" fill="url(#a)"/><g transform="rotate(-25 32 32)" fill="none" stroke-linecap="round"><path d="M6 32A26 9.5 0 0 1 58 32" stroke="#fff" stroke-width="2.6" opacity=".55"/><circle cx="32" cy="32" r="11.5" fill="url(#b)" stroke="none"/><path d="M6 32A26 9.5 0 0 0 58 32" stroke="#fff" stroke-width="3"/><circle cx="46" cy="40.2" r="3.4" fill="#ffd166" stroke="none"/></g></svg>';
 document.querySelectorAll('link[rel~="icon"]').forEach(l=>l.remove());
 const l=document.createElement("link");l.rel="icon";l.type="image/svg+xml";l.href="data:image/svg+xml,"+encodeURIComponent(s);document.head.appendChild(l)}
-
-/* добавочный: после 10 цифр номера пишите цифры добавочного, появится «доб.» */
-fmtPh=function(v){let d=String(v||"").replace(/\D/g,"");if(d[0]==="7"||d[0]==="8")d=d.slice(1);const x=d.slice(10,16);d=d.slice(0,10);let r="+7";if(d.length)r+=" ("+d.slice(0,3);if(d.length>=3)r+=")";if(d.length>3)r+=" "+d.slice(3,6);if(d.length>6)r+="-"+d.slice(6,8);if(d.length>8)r+="-"+d.slice(8,10);if(x)r+=" доб. "+x;return r};
-const telDial=t=>{t=String(t||"");const i=t.search(/доб/i);return (i<0?t:t.slice(0,i)).replace(/[^\d+]/g,"")+(i<0?"":",,"+t.slice(i).replace(/\D/g,""))};
-const fixTel=()=>document.querySelectorAll('a[href^="tel:"]').forEach(a=>{if(/доб/i.test(a.textContent)){const h="tel:"+telDial(a.textContent);if(a.getAttribute("href")!==h)a.setAttribute("href",h)}});
+const fixTel=()=>document.querySelectorAll('a[href^="tel:"]').forEach(a=>{if(/доб/i.test(a.textContent)){const h="tel:"+telH(a.textContent);if(a.getAttribute("href")!==h)a.setAttribute("href",h)}});
 new MutationObserver(fixTel).observe(document.body,{childList:true,subtree:true});
-
-/* НМЦК -> Сумма закупки */
-const _ed=editDeal;editDeal=function(){_ed.apply(this,arguments);document.querySelectorAll("#frm label").forEach(l=>{const n=l.firstChild;if(n&&n.nodeType===3&&/НМЦК/.test(n.nodeValue))n.nodeValue="Сумма закупки, ₽"})};
-
-/* смена менеджера без открытия закупки */
 function mgrEl(d){const s=document.createElement("select");s.className="msel";s.draggable=false;s.setAttribute("aria-label","Менеджер");
 s.innerHTML='<option value="">Не назначен</option>'+S.users.filter(u=>u.active!==false||u.id===d.manager).map(u=>`<option value="${u.id}"${d.manager===u.id?" selected":""}>${esc(u.name)}</option>`).join("");
 s.onclick=e=>e.stopPropagation();s.onchange=()=>setMgr(d.id,s.value);return s}
@@ -1101,33 +1093,16 @@ const put=(host,d)=>{if(!host||!d)return;[...host.childNodes].forEach(n=>{if(!(n
 document.querySelectorAll(".card[data-id]").forEach(c=>put(c.querySelector(".rs.bxv"),S.deals.find(x=>x.id===c.dataset.id)));
 document.querySelectorAll("tr.row").forEach(tr=>{const m=/openDeal\('([^']+)'\)/.exec(tr.getAttribute("onclick")||"");if(m)put(tr.lastElementChild,S.deals.find(x=>x.id===m[1]))})}
 const _r=render;render=function(){_r.apply(this,arguments);try{mgrEnh()}catch(e){}};
-
-/* карточка закупки: завершить сделку, контактные лица, менеджер */
-const people=(d,can)=>'<div class="vh">Контактные лица</div>'+((d.people||[]).length?d.people.map((p,i)=>`<div class="ct1"><span class="ctn">${esc(p.n||"Без имени")}</span>${p.p?`<a class="lnk" href="tel:${esc(telDial(p.p))}">${esc(p.p)}</a>`:""}${p.e?`<a class="lnk" href="mailto:${esc(p.e)}">${esc(p.e)}</a>`:""}${can?`<button type="button" class="ctx" data-pdel="${i}">✕</button>`:""}</div>`).join(""):'<div class="mu" style="margin-bottom:8px">Пока никого</div>')+(can?'<button type="button" class="btn ghost" data-padd>+ Добавить контакт</button>':"");
 const _vd=viewDeal;viewDeal=function(id){_vd.apply(this,arguments);try{
 const d=S.deals.find(x=>x.id===id),fm=$("#frm");if(!d||!fm)return;
-const can=isAdmin()||d.manager===cur.id||pEditAll(),dd=()=>S.deals.find(x=>x.id===id)||d;
-const hero=fm.querySelector(".hero");
+const can=isAdmin()||d.manager===cur.id||pEditAll(),hero=fm.querySelector(".hero");
 if(can&&hero&&!["done","lost"].includes(d.stage)){const w=document.createElement("div");w.className="hact";w.innerHTML='<button type="button" class="ab">🏁 Завершить сделку</button>';hero.appendChild(w);
 w.firstChild.onclick=async()=>{const k=await dlgAsk("Сделка завершена. Чем она закончилась?",["Отмена","Провалена","Успешна"]);if(k!==1&&k!==2)return;
 const ok=k===2,keys=(S.stat&&S.stat[ok?"won":"lost"])||[ok?"done":"lost"],st=stages().find(s=>keys.includes(s[0]));
 if(!st)return toast("Не найден этап для этого итога. Проверьте «Этапы воронки».");
 try{await moveStage(id,st[0]);const n=S.deals.find(x=>x.id===id);if(n)n.stage=st[0];toast(ok?"Сделка успешна":"Сделка провалена");viewDeal(id)}catch(e){toast("Не удалось завершить сделку")}}}
 if(isLead())fm.querySelectorAll(".vf").forEach(v=>{const s=v.querySelector("small");if(s&&s.textContent==="Ответственный"){const x=v.querySelector("div");x.innerHTML="";x.appendChild(mgrEl(d))}});
-const after=[...fm.querySelectorAll("section.vc")].find(s=>{const h=s.querySelector(".vh");return h&&h.textContent==="Клиент"});
-if(after){const sec=document.createElement("section");sec.className="vc";sec.innerHTML=people(d,can);after.after(sec);
-sec.onclick=async e=>{const t=e.target.closest("button");if(!t)return;
-if(t.hasAttribute("data-padd")){t.outerHTML='<div class="ctr"><input class="pn" placeholder="Имя человека" autocomplete="off"><input class="pp" type="tel" placeholder="+7 (___) ___-__-__ доб." inputmode="tel"><input class="pe" type="email" placeholder="Почта" inputmode="email" autocapitalize="off"><button type="button" class="btn" data-psave>Сохранить</button><button type="button" class="btn ghost" data-pno>Отмена</button></div>';sec.querySelector(".pn").focus();return}
-if(t.hasAttribute("data-pno")){viewDeal(id);return}
-try{
-if(t.hasAttribute("data-psave")){const r=t.closest(".ctr"),n=r.querySelector(".pn").value.trim(),p=npn(r.querySelector(".pp").value),m=r.querySelector(".pe").value.trim();
-if(!n&&!p&&!m)return toast("Введите имя, телефон или почту");if(m&&!/^\S+@\S+\.\S+$/.test(m))return toast("Проверьте email");
-const arr=[...(dd().people||[]),{n,p,e:m}];await lim(db.doc("deals/"+id).update({people:arr}));dd().people=arr;viewDeal(id)}
-else if(t.hasAttribute("data-pdel")){if(!await askc("Удалить контакт?"))return;const arr=(dd().people||[]).filter((_,i)=>i!==+t.dataset.pdel);await lim(db.doc("deals/"+id).update({people:arr}));dd().people=arr;viewDeal(id)}
-}catch(er){toast("Не удалось сохранить: "+(er.message||er))}}}
 }catch(e){}};
-
-/* перетаскивание файла в окно «Файлы и спецификации» */
 const _fw=fileWire;fileWire=function(id,can){_fw.apply(this,arguments);try{
 const up=$("#fup"),box=$("#fl");if(!up||!box)return;const zn=box.closest("section")||box;
 const h=document.createElement("div");h.className="mu";h.style.cssText="font-size:12px;margin-top:6px";h.textContent="Файл можно перетащить прямо сюда";zn.appendChild(h);
@@ -1142,5 +1117,4 @@ window.addEventListener("dragover",e=>{if(on(e))e.preventDefault()});
 window.addEventListener("drop",e=>{if(on(e))e.preventDefault()});
 })();
 </script>
-
 </body></html>
