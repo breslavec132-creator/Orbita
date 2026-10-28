@@ -1,4 +1,5 @@
 
+
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -309,14 +310,15 @@ if(SETUP)return;
 stopSubs();fbUser=u;cur=null;mode="";S.users=[];S.deals=[];S.orgs=[];S.tasks=[];S.notes=[];
 if(!u){L.u=true;route();return}
 const er=()=>{if(cur)toast("Не удалось загрузить данные")},sub=(q,f,e)=>unsubs.push(q.onSnapshot(f,e||er));
-sub(db.collection("users"),s=>{S.users=s.docs.map(d=>({id:d.id,...d.data()}));L.u=true;route()},()=>{S.users=[];L.u=true;route()});
+sub(db.collection("users"),s=>{const nu=s.docs.map(d=>({id:d.id,...d.data()})),sig=a=>JSON.stringify(a.map(u=>{const{seen,...r}=u;return r})),same=L.u&&sig(nu)===sig(S.users);S.users=nu;L.u=true;if(same){presUpd();return}route()},()=>{S.users=[];L.u=true;route()});
 sub(db.collection("deals"),s=>{S.deals=s.docs.map(d=>({id:d.id,...d.data()}));upd()});
 sub(db.collection("tasks"),s=>{S.tasks=s.docs.map(d=>({id:d.id,...d.data()}));upd();remCheck()});
 sub(db.collection("notes"),s=>{S.notes=s.docs.map(d=>({id:d.id,...d.data()}));ntUpd()},()=>{});
 sub(db.collection("orgs"),s=>{S.orgs=s.docs.map(d=>({id:d.id,...d.data()}));upd()});
 sub(db.doc("cfg/stages"),s=>{S.stages=stFromDb(s.exists&&s.data().list);upd()});
 sub(db.doc("cfg/stats"),s=>{S.stat=(s.exists&&s.data())||null;upd()});
-sub(db.doc("cfg/fields"),s=>{S.req=(s.exists&&s.data().req)||{};upd()})}
+sub(db.doc("cfg/fields"),s=>{S.req=(s.exists&&s.data().req)||{};upd()});
+sub(db.doc("cfg/dadata"),s=>{S.dd=(s.exists&&s.data().token)||""},()=>{})}
 function dlBlob(name,data,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:type||"application/octet-stream"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
 async function mkAuth(login,pw){const a=firebase.initializeApp(FBCFG,"sec"+Date.now());try{const c=await a.auth().createUserWithEmailAndPassword(EM(login),pw),uid=c.user.uid;await a.auth().signOut();return uid}finally{try{await a.delete()}catch(_){}}}
 const mkErr=x=>x&&x.code==="auth/email-already-in-use"?"Вход с таким логином уже создан. Пароль уже созданному сотруднику отсюда не сменить: он меняет его сам кнопкой 🔑 в шапке.":x&&x.code==="auth/weak-password"?"Пароль слишком простой.":x&&x.code==="auth/operation-not-allowed"?"В Firebase не включён вход по почте и паролю (Authentication → Sign-in method).":"Не удалось сохранить: "+((x&&(x.message||x.code))||x);
@@ -371,7 +373,7 @@ const tabs=[["deals","Закупки"],["orgs","Организации"],["tasks
 if(!tabs.some(t=>t[0]===view))view="deals";
 if(view==="admin"&&adm==="stages"&&!stg)stg=stages().map(x=>[...x]);
 $("#tabs").innerHTML=tabs.map(([k,n])=>`<button data-v="${k}" class="${view===k?"on":""}">${n}${k==="tasks"&&tkOpenCnt()?` <b class="bdg">${tkOpenCnt()}</b>`:""}</button>`).join("");
-$("#me").innerHTML=`<button type="button" class="avb" id="pwb" title="Сменить пароль" style="margin-right:6px">🔑</button><button type="button" class="avb nbell" id="bell" title="Уведомления">🔔<b id="bn" hidden></b></button><button type="button" class="avb" id="avb" title="Сменить фото">${av(cur.id)}</button><span class="nm">${esc(cur.name)} · <b>${roleName(cur.role)}</b></span><button class="btn ghost" id="out">Выйти</button>`;ntUpd();
+$("#me").innerHTML=`<button type="button" class="avb" id="onl" title="Кто в сети" style="margin-right:8px"></button><button type="button" class="avb" id="pwb" title="Сменить пароль" style="margin-right:6px">🔑</button><button type="button" class="avb nbell" id="bell" title="Уведомления">🔔<b id="bn" hidden></b></button><button type="button" class="avb" id="avb" title="Сменить фото">${av(cur.id)}</button><span class="nm">${esc(cur.name)} · <b>${roleName(cur.role)}</b></span><button class="btn ghost" id="out">Выйти</button>`;ntUpd();
 $("#main").innerHTML=view==="deals"?deals():view==="orgs"?orgs():view==="stats"?statsView():view==="tasks"?tasksView():adminView();
 if(view==="deals"&&kv==="kanban")dnd();
 }
@@ -415,14 +417,14 @@ return `<div class="tb"><h1>Админ-панель</h1></div><div class="sub"><
 }
 function staffView(){
 return `<div class="tb" style="padding-top:0"><button class="add" onclick="userForm()">+ Добавить сотрудника</button><span class="mu sm">Сотрудников: ${S.users.length}</span></div>
-<div class="wrap"><table><tr><th>Сотрудник</th><th>Должность</th><th>Логин</th><th>Роль</th><th>Закупок</th><th>Статус</th></tr>${S.users.map(u=>`<tr class="row" onclick="userForm('${u.id}')"><td>${av(u.id)} <b>${esc(u.name)}</b></td><td>${esc(u.position)}</td><td>${esc(u.login)}</td><td>${roleName(u.role)}</td><td>${S.deals.filter(d=>d.manager===u.id).length}</td><td><span class="badge ${u.active===false?"off":""}">${u.active===false?"Заблокирован":"Работает"}</span></td></tr>`).join("")}</table></div>`;
+<div class="wrap"><table><tr><th>Сотрудник</th><th>Должность</th><th>Логин</th><th>Роль</th><th>Закупок</th><th>Статус</th><th>Активность</th></tr>${S.users.map(u=>`<tr class="row" onclick="userForm('${u.id}')"><td>${av(u.id)} <b>${esc(u.name)}</b></td><td>${esc(u.position)}</td><td>${esc(u.login)}</td><td>${roleName(u.role)}</td><td>${S.deals.filter(d=>d.manager===u.id).length}</td><td><span class="badge ${u.active===false?"off":""}">${u.active===false?"Заблокирован":"Работает"}</span></td><td>${presCell(u)}</td></tr>`).join("")}</table></div>`;
 }
 function stagesView(){
 return `<div class="panel"><b>Этапы воронки закупок</b><p class="mu">Порядок сверху вниз соответствует порядку колонок слева направо.</p>${stg.map(([k,n,c],i)=>`<div class="r"><input type="color" value="${c}" data-i="${i}" data-f="2" aria-label="Цвет"><input value="${esc(n)}" data-i="${i}" data-f="1" aria-label="Название этапа"><button class="btn ghost" onclick="stMove(${i},-1)" aria-label="Выше">↑</button><button class="btn ghost" onclick="stMove(${i},1)" aria-label="Ниже">↓</button><button class="btn del" onclick="stDel(${i})">Удалить</button></div>`).join("")}
 <div class="acts"><button class="btn ghost" onclick="stAdd()">+ Добавить этап</button><button class="btn" onclick="stSave()">Сохранить этапы</button></div></div>`;
 }
 function fieldsView(){
-return `<div class="panel"><b>Обязательные поля закупки</b><p class="mu">Отмеченные поля нужно заполнить, чтобы создать закупку. Остальные можно оставить пустыми и дополнить позже.</p>${FIELDS.map(([k,n])=>`<label class="r" style="color:var(--tx);font-size:14px"><span>${n}</span><input type="checkbox" style="width:22px;height:22px" data-r="${k}" ${S.req[k]?"checked":""}></label>`).join("")}<div class="acts"><button class="btn" onclick="fSave()">Сохранить</button></div></div>`;
+return `<div class="panel"><b>Обязательные поля закупки</b><p class="mu">Отмеченные поля нужно заполнить, чтобы создать закупку. Остальные можно оставить пустыми и дополнить позже.</p>${FIELDS.map(([k,n])=>`<label class="r" style="color:var(--tx);font-size:14px"><span>${n}</span><input type="checkbox" style="width:22px;height:22px" data-r="${k}" ${S.req[k]?"checked":""}></label>`).join("")}<div class="acts"><button class="btn" onclick="fSave()">Сохранить</button></div></div><div class="panel"><b>Поиск организации по ИНН</b><p class="mu">Если организации нет в базе, при вводе ИНН она будет найдена в реестре через сервис DaData. Бесплатный API-ключ выдаётся на dadata.ru после регистрации. Без ключа поиск работает только по организациям, которые уже есть в Орбите.</p><label>API-ключ DaData<input id="ddk" value="${esc(S.dd||"")}" autocomplete="off" autocapitalize="off"></label><div class="acts"><button class="btn" onclick="ddSave()">Сохранить ключ</button></div></div>`;
 }
 async function fSave(){const req={};document.querySelectorAll("[data-r]").forEach(c=>req[c.dataset.r]=c.checked);try{await lim(db.doc("cfg/fields").set({req}));toast("Настройки полей сохранены")}catch(e){toast("Не удалось сохранить: "+(e.message||e))}}
 function stMove(i,d){const j=i+d;if(j<0||j>=stg.length)return;[stg[i],stg[j]]=[stg[j],stg[i]];render()}
@@ -498,7 +500,7 @@ fm.innerHTML=`<div class="dh"><button type="button" class="ib" id="back">←</bu
 <div class="stb">${ST.map(([k,n,c],i)=>`<button type="button" class="sg" data-st="${k}" style="--c:${i<=ci?c:"var(--ln)"}" title="${esc(n)}">${esc(n)}</button>`).join("")}</div>
 <div class="hero"><div><div class="vsum${can?" ed":""}"${can?` data-k="amount" data-t="number"`:""}>${d.amount?rub(d.amount):"—"}</div><div class="hmeta"><span class="chip stc" style="background:${(ST[ci]||[])[2]||"var(--ln)"}">${esc(stN(d.stage))}</span>${d.due?`<span class="chip${d.due<new Date().toISOString().slice(0,10)&&!["done","lost"].includes(d.stage)?" od":""}${isDueToday(d)?" td":""}">${isDueToday(d)?"🚨":"📅"} до ${fmtD(d.due)}</span>`:""}<span class="chip">создана ${rel(d.created)}</span></div></div>
 </div>
-${odView(d)}${d.note?`<div class="cnote nc-${d.nc||"none"}"><small>Комментарий по заказчику</small><div>${esc(d.note).replace(/\n/g,"<br>")}</div></div>`:""}
+${odView(d)}${d.note?`<div class="cnote nc-${d.nc||"none"}"><small>Комментарий по заказчику</small><div>${lnkz(d.note).replace(/\n/g,"<br>")}</div></div>`:""}
 <div class="vt"><button type="button" class="on" data-tab="g">Общие</button><button type="button" data-tab="h">История</button></div>
 <div class="tg vcols"><div class="vl">
 <section class="vc"><div class="vh">Сумма и маржа</div>${mgBox(d,can)}</section>
@@ -527,7 +529,7 @@ $("#frm").innerHTML=`<div class="dh"><button type="button" class="ib" id="back">
 <label>Ссылка на закупку<input name="url" value="${esc(it.url)}" placeholder="https://" inputmode="url" autocapitalize="off"></label>
 <div class="g2"><label>Организация (заказчик)<input name="org" list="ol" value="${esc(it.org)}" autocomplete="off"><datalist id="ol">${S.orgs.map(o=>`<option value="${esc(o.name)}">`).join("")}</datalist></label>
 <label>ИНН (10 или 12 цифр)<input name="inn" value="${esc(it.inn)}" inputmode="numeric" maxlength="12" autocomplete="off"></label></div>
-<div id="hint"></div>
+<div id="hint"></div><div id="innr"></div>
 <div class="g2"><label>Телефон<input name="phone" type="tel" placeholder="+7 (___) ___-__-__ доб." inputmode="tel" value="${esc(it.phone)}"></label><label>Email<input name="email" value="${esc(it.email)}" inputmode="email" autocapitalize="off"></label></div>
 <div class="cts"><div class="vh" style="margin:0 0 8px">Другие почты</div><div id="eml">${(it.emails||[]).map(emRow).join("")}</div><button type="button" class="btn ghost" id="ema">+ Добавить почту</button></div>
 <div class="cts"><div class="vh" style="margin:0 0 8px">Контактные лица (имя, телефон, почта)</div><div id="ctl">${(it.contacts||[]).map(ctRow).join("")}</div><button type="button" class="btn ghost" id="cta">+ Добавить контакт</button></div>
@@ -601,7 +603,7 @@ if(cmOff)cmOff();
 const box=$("#cm");let list=[];
 cmOff=db.collection("deals/"+id+"/comments").onSnapshot(s=>{
 const l=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.t-b.t);list=l;
-box.innerHTML=l.length?l.map(c=>`<div class="c" data-cid="${c.id}"><small>${esc(c.n)} · ${new Date(c.t).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}${c.e?" · изменён":""}</small><span class="cx">${esc(c.x)}</span>${(c.a===cur.id||isAdmin())?`<div class="cacts"><button type="button" class="cbt" data-ce="${c.id}">✎ Изменить</button><button type="button" class="cbt del" data-cd="${c.id}">🗑 Удалить</button></div>`:""}</div>`).join(""):`<p class="mu">Комментариев пока нет.</p>`;
+box.innerHTML=l.length?l.map(c=>`<div class="c" data-cid="${c.id}"><small>${esc(c.n)} · ${new Date(c.t).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}${c.e?" · изменён":""}</small><span class="cx">${lnkz(c.x)}</span>${(c.a===cur.id||isAdmin())?`<div class="cacts"><button type="button" class="cbt" data-ce="${c.id}">✎ Изменить</button><button type="button" class="cbt del" data-cd="${c.id}">🗑 Удалить</button></div>`:""}</div>`).join(""):`<p class="mu">Комментариев пока нет.</p>`;
 box.scrollTop=box.scrollHeight},()=>{box.innerHTML=`<p class="mu">Не удалось загрузить комментарии.</p>`});
 box.onclick=async e=>{const ed=e.target.closest("[data-ce]"),dl=e.target.closest("[data-cd]"),path="deals/"+id+"/comments";
 const syncDeal=async rest=>{const lc=rest[rest.length-1];try{await lim(db.doc("deals/"+id).update({cc:rest.length,last:lc?lc.x.slice(0,120):"",lastBy:lc?lc.n:""}))}catch(_){}};
@@ -638,7 +640,7 @@ if(!it)return;
 const list=id?S.deals.filter(d=>d.org===it.name):[];
 $("#frm").innerHTML=`<h2>${id?"Организация":"Новая организация"}</h2>
 <label>Название<input name="name" value="${esc(it.name)}"></label>
-<label>ИНН (10 или 12 цифр)<input name="inn" value="${esc(it.inn)}" inputmode="numeric" maxlength="12"></label>
+<label>ИНН (10 или 12 цифр)<input name="inn" value="${esc(it.inn)}" inputmode="numeric" maxlength="12"></label><div id="innr"></div>
 <div class="g2"><label>Телефон<input name="phone" type="tel" placeholder="+7 (___) ___-__-__ доб." inputmode="tel" value="${esc(it.phone)}"></label><label>Email<input name="email" value="${esc(it.email)}" inputmode="email" autocapitalize="off"></label></div>
 ${id?`<div class="hs"><b>Закупки организации (${list.length})</b>${list.length?list.sort((a,b)=>(b.created||0)-(a.created||0)).map(d=>`<div><button type="button" class="lnk" data-open="${d.id}">${d.num?"№ "+esc(d.num):"Без номера"} · ${esc(d.title||"Без названия")}</button> <small>${esc(stN(d.stage))} · ${fmt(d.created)}</small></div>`).join(""):`<div class="mu">Пока нет.</div>`}</div>`:""}
 <div class="err" id="err"></div>
@@ -662,7 +664,7 @@ $("#dlg").close();toast("Организация сохранена");
 $("#dlg").showModal();
 }
 $("#tabs").onclick=e=>{const b=e.target.closest("[data-v]"),v=b&&b.dataset.v;if(v){view=v;render()}};
-$("#me").onclick=e=>{if(e.target.id==="out")logout();else if(e.target.closest("#avb"))changePhoto();else if(e.target.closest("#bell"))ntOpen();else if(e.target.closest("#pwb"))changePw()};
+$("#me").onclick=e=>{if(e.target.id==="out")logout();else if(e.target.closest("#avb"))changePhoto();else if(e.target.closest("#bell"))ntOpen();else if(e.target.closest("#onl"))onlOpen();else if(e.target.closest("#pwb"))changePw()};
 $("#main").addEventListener("input",e=>{const t=e.target;if(t.dataset&&t.dataset.f&&stg)stg[+t.dataset.i][+t.dataset.f]=t.value});
 $("#srch").oninput=e=>{q=e.target.value.trim().toLowerCase();if(mode==="app")render()};
 {const sm=HTMLDialogElement.prototype.showModal;HTMLDialogElement.prototype.showModal=function(){if(!this.open)sm.call(this)}}
@@ -866,9 +868,9 @@ el.remove();remCheck()}catch(er){toast("Не удалось: "+(er.message||er))
 setInterval(remCheck,15000);document.getElementById("dlg").addEventListener("close",()=>{remHost()});
 
 /* собственные окна подтверждения (системные confirm в опубликованной странице могут быть заблокированы) */
-function dlgAsk(msg,btns){return new Promise(res=>{let d=document.getElementById("ask");if(!d){d=document.createElement("div");d.id="ask";d.setAttribute("popover","manual")}
+function dlgAsk(msg,btns,cl){return new Promise(res=>{let d=document.getElementById("ask");if(!d){d=document.createElement("div");d.id="ask";d.setAttribute("popover","manual")}
 const hostD=document.getElementById("dlg");(hostD&&hostD.open?hostD:document.body).appendChild(d);
-d.innerHTML=`<div class="ask-b"><div class="ask-t">${esc(msg)}</div><div class="ask-a">${btns.map((b,i)=>`<button type="button" class="btn ${i===btns.length-1?"":"ghost"}" data-i="${i}">${esc(b)}</button>`).join("")}</div></div>`;
+d.innerHTML=`<div class="ask-b"><div class="ask-t">${esc(msg)}</div><div class="ask-a">${btns.map((b,i)=>`<button type="button" class="btn ${cl&&cl[i]?cl[i]:i===btns.length-1?"":"ghost"}" data-i="${i}">${esc(b)}</button>`).join("")}</div></div>`;
 const done=v=>{try{d.hidePopover()}catch(e){d.style.display="none"}res(v)};
 d.onclick=e=>{const b=e.target.closest("[data-i]");if(b)done(+b.dataset.i);else if(e.target===d)done(-1)};
 try{d.hidePopover()}catch(e){}try{d.showPopover()}catch(e){d.style.display="flex"}})}
@@ -890,7 +892,7 @@ async function savePhoto(d){try{await lim(db.doc("users/"+cur.id).update({photo:
 async function changePhoto(){const u=U(cur.id);if(u&&u.photo){const m=await dlgAsk("Фото профиля",["Отмена","Удалить фото","Выбрать фото"]);if(m===1){await savePhoto("");return}if(m!==2)return}
 const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=()=>{const f=i.files[0];if(!f)return;const im=new Image(),url=URL.createObjectURL(f);im.onload=()=>{const Z=160,c=document.createElement("canvas");c.width=c.height=Z;const x=c.getContext("2d"),q=Math.min(im.width,im.height);x.drawImage(im,(im.width-q)/2,(im.height-q)/2,q,q,0,0,Z,Z);URL.revokeObjectURL(url);savePhoto(c.toDataURL("image/jpeg",.82))};im.onerror=()=>toast("Не удалось открыть фото");im.src=url};i.click()}
 function ntUpd(){if(!cur)return;const l=(S.notes||[]).filter(x=>x.to===cur.id&&!x.read),b=document.getElementById("bn");if(b){b.hidden=!l.length;b.textContent=l.length}
-window.__nts=window.__nts||new Set();const nw=l.filter(x=>!window.__nts.has(x.id));nw.forEach(x=>window.__nts.add(x.id));if(nw.length)toast(nw.length===1?"Вам назначена закупка: "+nw[0].text:"Вам назначено закупок: "+nw.length)}
+window.__nts=window.__nts||new Set();const nw=l.filter(x=>!window.__nts.has(x.id));nw.forEach(x=>window.__nts.add(x.id));if(nw.length)ntSound();if(nw.length)toast(nw.length===1?"Вам назначена закупка: "+nw[0].text:"Вам назначено закупок: "+nw.length)}
 function ntOpen(){const l=(S.notes||[]).filter(x=>x.to===cur.id).sort((a,b)=>b.t-a.t).slice(0,30),fm=$("#frm");
 const rd=async x=>{if(x&&!x.read){try{await db.doc("notes/"+x.id).update({read:true});x.read=true}catch(_){}}};
 fm.onsubmit=e=>e.preventDefault();fm.onclick=async e=>{const b=e.target.closest("[data-nt]");if(b){const x=(S.notes||[]).find(z=>z.id===b.dataset.nt);await rd(x);ntUpd();if(x&&x.deal&&S.deals.some(d=>d.id===x.deal))viewDeal(x.deal);else toast("Закупка недоступна");return}
@@ -1097,7 +1099,7 @@ const _vd=viewDeal;viewDeal=function(id){_vd.apply(this,arguments);try{
 const d=S.deals.find(x=>x.id===id),fm=$("#frm");if(!d||!fm)return;
 const can=isAdmin()||d.manager===cur.id||pEditAll(),hero=fm.querySelector(".hero");
 if(can&&hero&&!["done","lost"].includes(d.stage)){const w=document.createElement("div");w.className="hact";w.innerHTML='<button type="button" class="ab">🏁 Завершить сделку</button>';hero.appendChild(w);
-w.firstChild.onclick=async()=>{const k=await dlgAsk("Сделка завершена. Чем она закончилась?",["Отмена","Провалена","Успешна"]);if(k!==1&&k!==2)return;
+w.firstChild.onclick=async()=>{const k=await dlgAsk("Сделка завершена. Чем она закончилась?",["Отмена","Провалена","Успешна"],["","red",""]);if(k!==1&&k!==2)return;
 const ok=k===2,keys=(S.stat&&S.stat[ok?"won":"lost"])||[ok?"done":"lost"],st=stages().find(s=>keys.includes(s[0]));
 if(!st)return toast("Не найден этап для этого итога. Проверьте «Этапы воронки».");
 try{await moveStage(id,st[0]);const n=S.deals.find(x=>x.id===id);if(n)n.stage=st[0];toast(ok?"Сделка успешна":"Сделка провалена");viewDeal(id)}catch(e){toast("Не удалось завершить сделку")}}}
@@ -1116,5 +1118,71 @@ up.click()})}catch(er){}};
 window.addEventListener("dragover",e=>{if(on(e))e.preventDefault()});
 window.addEventListener("drop",e=>{if(on(e))e.preventDefault()});
 })();
+</script>
+<style>
+.btn.red{background:#e0443c;color:#fff}.btn.red:hover{background:#c9362f}
+.kar{position:fixed;top:50%;transform:translateY(-50%);width:44px;height:88px;border-radius:22px;border:1px solid rgba(255,255,255,.55);background:rgba(20,35,50,.28);color:#fff;font-size:34px;line-height:1;display:none;align-items:center;justify-content:center;z-index:5;opacity:.5;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:opacity .2s,background .2s;user-select:none}
+.kar.on{display:flex}.kar:hover,.kar.hv{opacity:.95;background:rgba(20,35,50,.5)}
+@media (max-width:720px){.kar{display:none!important}}
+</style>
+<script>
+/* ===== ПРАВКИ: онлайн, ссылки, звук, ИНН, стрелки ===== */
+const ONL_MS=180000;
+const isOn=u=>!!u&&u.active!==false&&((cur&&u.id===cur.id)||(u.seen&&Date.now()-u.seen<ONL_MS));
+const presCell=u=>u.active===false?'<span class="mu">—</span>':isOn(u)?'<span style="color:#2f9e44;font-weight:600">● в сети</span>':(u.seen?'<span class="mu">был(а) '+esc(rel(u.seen))+'</span>':'<span class="mu">ещё не заходил(а)</span>');
+function presBtn(){const b=document.getElementById("onl");if(!b||!cur)return;const n=S.users.filter(isOn).length;b.innerHTML='<span style="font-size:13px;white-space:nowrap;font-weight:600;color:var(--tx)">🟢 '+n+'</span>';b.title="Сейчас в сети: "+n+". Нажмите, чтобы посмотреть, кто."}
+function presUpd(){presBtn();if(mode==="app"&&view==="admin"&&adm==="staff"&&!$("#dlg").open)render()}
+function onlOpen(){const fm=$("#frm");fm.onsubmit=e=>e.preventDefault();fm.onclick=e=>{if(e.target.closest("#onlx"))$("#dlg").close()};
+const l=S.users.filter(u=>u.active!==false).sort((a,b)=>(isOn(b)-isOn(a))||((b.seen||0)-(a.seen||0)));
+fm.innerHTML=`<div class="dh"><h2>Кто в сети</h2></div>${l.map(u=>`<div class="vr"><span class="rs">${av(u.id)} ${esc(u.name)}</span><b>${presCell(u)}</b></div>`).join("")}<div class="acts"><button type="button" class="btn" id="onlx">Закрыть</button></div>`;$("#dlg").showModal()}
+function beat(){if(!cur||!db)return;try{db.doc("users/"+cur.id).update({seen:Date.now()}).catch(()=>{})}catch(e){}}
+setInterval(beat,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)beat()});
+{const _r2=render;render=function(){_r2.apply(this,arguments);try{presBtn();if(cur&&beat.u!==cur.id){beat.u=cur.id;beat()}}catch(e){}}}
+
+/* активные ссылки в тексте */
+const lnkz=t=>esc(t).replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi,m=>{let u=m,tail="";const x=/(?:[.,;:!?)]|&quot;|&#39;|&gt;)+$/.exec(u);if(x){tail=x[0];u=u.slice(0,u.length-tail.length)}const h=/^www\./i.test(u)?"https://"+u:u;return `<a class="lnk" href="${h}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${u}</a>`+tail});
+
+/* звук при назначении закупки */
+let AC=null;const acx=()=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();return AC}catch(e){return null}};
+["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{acx()},{once:true,passive:true}));
+function ntSound(){const c=acx();if(!c)return;[[784,0],[1047,.16],[1319,.32]].forEach(([f,t])=>{const o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=f;o.connect(g);g.connect(c.destination);const s=c.currentTime+t;g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.25,s+.03);g.gain.exponentialRampToValueAtTime(.0001,s+.35);o.start(s);o.stop(s+.4)})}
+
+/* поиск и добавление заказчика по ИНН */
+let innTok=0;
+async function innFind(inn){
+const o=S.orgs.find(x=>x.inn===inn);if(o)return{src:"local",name:o.name,inn};
+if(!S.dd)return{src:"nokey"};
+const r=await fetch("https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json","Authorization":"Token "+S.dd},body:JSON.stringify({query:inn})});
+if(!r.ok)throw new Error(r.status===401||r.status===403?"ключ DaData не подошёл":"ошибка поиска ("+r.status+")");
+const j=await r.json(),s=(j.suggestions||[])[0];if(!s)return{src:"none"};
+const d=s.data||{};return{src:"web",name:(d.name&&d.name.short_with_opf)||s.value,inn:d.inn||inn,addr:(d.address&&d.address.value)||"",closed:d.state&&d.state.status&&d.state.status!=="ACTIVE"}}
+document.addEventListener("input",async e=>{const t=e.target;if(!(t.matches&&t.matches("#frm input[name=inn]")))return;
+const fm=t.form,box=fm&&fm.querySelector("#innr");if(!box)return;const v=String(t.value).replace(/\D/g,""),tok=++innTok,mu=x=>`<div class="mu" style="margin:-4px 0 12px">${x}</div>`;
+if(v.length!==10&&v.length!==12){box.innerHTML="";return}
+box.innerHTML=mu("Ищу организацию по ИНН…");let r;
+try{r=await innFind(v)}catch(x){if(tok===innTok&&box.isConnected)box.innerHTML=mu("Не удалось найти по ИНН: "+esc(x.message||x));return}
+if(tok!==innTok||!box.isConnected)return;
+const ni=fm.elements.org||fm.elements.name;
+if(r.src==="nokey"){box.innerHTML=mu("Организации с таким ИНН в базе нет. Чтобы искать в реестре, руководитель может добавить ключ DaData: Админ-панель → Поля закупки.");return}
+if(r.src==="none"){box.innerHTML=mu("По этому ИНН ничего не найдено. Проверьте цифры.");return}
+if(ni&&normN(ni.value)===normN(r.name)){box.innerHTML="";return}
+box.innerHTML=`<div class="hint"><b>${r.src==="local"?"Организация уже есть в базе":"Найдено по ИНН"}</b><div class="r"><span>${esc(r.name)}<br><span class="mu">ИНН ${esc(r.inn)}${r.addr?" · "+esc(r.addr):""}${r.closed?" · ⚠ организация не действует":""}</span></span><button type="button" class="btn ghost" data-innok data-n="${esc(r.name)}" data-i="${esc(r.inn)}">Подставить</button></div></div>`});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-innok]");if(!b)return;const fm=b.closest("form"),n=fm.elements.org||fm.elements.name;if(!n)return;n.value=b.dataset.n;fm.elements.inn.value=b.dataset.i;n.dispatchEvent(new Event("input",{bubbles:true}));n.dispatchEvent(new Event("change",{bubbles:true}));const bx=fm.querySelector("#innr");if(bx)bx.innerHTML="";toast("Организация подставлена")});
+async function ddSave(){const v=($("#ddk").value||"").trim();try{await lim(db.doc("cfg/dadata").set({token:v}));toast("Ключ сохранён")}catch(e){toast("Не удалось сохранить: "+(e.message||e))}}
+
+/* стрелки прокрутки канбана */
+(function(){
+const mk=(c,t)=>{const b=document.createElement("div");b.className="kar "+c;b.textContent=t;b.setAttribute("aria-hidden","true");document.body.appendChild(b);return b};
+const AL=mk("l","‹"),AR=mk("r","›");let dir=0,sp=0;
+const clr=()=>{dir=0;sp=0;AL.classList.remove("hv");AR.classList.remove("hv")};
+[[AL,-1],[AR,1]].forEach(([el,d])=>{["mouseenter","dragenter","dragover"].forEach(ev=>el.addEventListener(ev,e=>{if(ev!=="mouseenter")e.preventDefault();dir=d;el.classList.add("hv")}));["mouseleave","dragleave","drop"].forEach(ev=>el.addEventListener(ev,clr))});
+(function tick(){const b=document.querySelector(".board"),dg=document.getElementById("dlg");
+if(b&&!(dg&&dg.open)){const r=b.getBoundingClientRect(),mx=b.scrollWidth-b.clientWidth;
+AL.style.left=Math.max(r.left,0)+8+"px";AR.style.right="8px";
+AL.classList.toggle("on",mx>4&&b.scrollLeft>4);AR.classList.toggle("on",mx>4&&b.scrollLeft<mx-4);
+if((dir<0&&!AL.classList.contains("on"))||(dir>0&&!AR.classList.contains("on")))clr();
+if(dir){sp=Math.min(22,sp+.7);b.scrollLeft+=dir*sp}else sp=0}
+else{AL.classList.remove("on");AR.classList.remove("on");clr()}
+requestAnimationFrame(tick)})()})();
 </script>
 </body></html>
