@@ -1188,7 +1188,7 @@ else{AL.classList.remove("on");AR.classList.remove("on");clr()}
 requestAnimationFrame(tick)})()})();
 </script>
 <style>
-.xlv{overflow:auto;height:calc(100vh - 230px);min-height:300px;margin:0 16px 16px;border:1px solid var(--ln);border-radius:8px;background:var(--sf);position:relative;outline:none}
+.xlv{contain:layout paint;overflow:auto;height:calc(100vh - 230px);min-height:300px;margin:0 16px 16px;border:1px solid var(--ln);border-radius:8px;background:var(--sf);position:relative;outline:none}
 .xlg{position:relative}
 .xlh{display:flex;position:sticky;top:0;z-index:4;height:34px}
 .xlh>div{flex:none;padding:0 8px;line-height:33px;font-weight:600;font-size:12.5px;color:var(--mu);background:var(--bg);border-right:1px solid var(--ln);border-bottom:1px solid var(--ln);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1226,7 +1226,7 @@ function xlIdx(){const T=XLV,all=T.rows[T.sh],mc=xlMatch();T.mset=new Set(mc[T.s
 function xlSw(){return `<span class="seg"><button class="btn ${XLV.mode==="table"?"sel":"ghost"}" onclick="XLV.mode='table';render()">Таблица</button><button class="btn ${XLV.mode==="list"?"sel":"ghost"}" onclick="XLV.mode='list';render()">Список организаций</button></span>`}
 function xlSheet(i){XLV.sh=i;XLV.sel=null;XLV.st=0;XLV.mi=0;render();const v=document.getElementById("xlv");if(v&&XLV.mt.length)xlGoto(0)}
 function xlOrgs(){
-const T=XLV,head=`<div class="tb"><h1>Организации</h1>${xlSw()}</div>`;
+const T=XLV,head=`<div class="tb"><h1>Организации</h1>${xlSw()}</div>`;xlSub();
 if(T.err)return head+`<div class="empty">Не удалось загрузить таблицу: ${esc(T.err)}<br><small>Если это «permission-denied», в правилах Firestore нужно разрешить коллекцию <b>xl</b> так же, как остальные (match /xl/{id}).</small></div>`;
 if(!T.ready)return head+`<div class="empty">Загружаю таблицу…</div>`;
 const total=T.rows.reduce((t,a)=>t+a.length,0);
@@ -1238,7 +1238,7 @@ return head+`<div class="xtl"><span class="seg">${XNAMES.map((n,i)=>`<button cla
 ${can?`<button class="btn ghost" onclick="xlAdd()">+ Строка</button><button class="btn ghost" onclick="xlDel()">Удалить строку</button>`:`<span class="mu">Только просмотр</span>`}
 <button class="btn ghost" onclick="xlExport()">⬇ Скачать .xlsx</button>
 ${q?`<span class="mu">Найдено на листе: <b>${T.mt.length}</b></span><button class="btn ghost" onclick="xlNext(-1)">▲</button><button class="btn ghost" onclick="xlNext(1)">▼</button><label class="ck" style="margin:0"><input type="checkbox" ${T.only?"checked":""} onchange="XLV.only=this.checked;XLV.st=0;render()">Только найденные</label>`:""}
-<span class="mu sm" style="margin-left:auto">Лист: сумма ${rub(Math.round(sm))} · затраты ${rub(Math.round(co))} · прибыль ${rub(Math.round(pr))}</span></div>
+<span class="mu sm" id="xlsum" style="margin-left:auto">Лист: сумма ${rub(Math.round(sm))} · затраты ${rub(Math.round(co))} · прибыль ${rub(Math.round(pr))}</span></div>
 <div class="xlv" id="xlv" tabindex="0"><div class="xlg" style="width:${XW}px"><div class="xlh"><div class="xn">№</div>${XCOL.map(c=>`<div style="width:${c[1]}px">${c[0]}</div>`).join("")}</div><div class="xlb" id="xlb" style="height:${T.view.length*RH}px"><div id="xrs"></div></div></div></div>`}
 function xlCell(r,j){const v=r.c[j];let h,cl="";
 if(j===6){const p=xlProfit(r);h=p===""?"":esc(xlF(p));cl=" xp"+(p<0?" neg":"")}
@@ -1248,7 +1248,7 @@ else h=esc(v).replace(/\n/g," · ");
 const s=XLV.sel&&XLV.sel.id===r.id&&XLV.sel.c===j?" xs":"";
 return `<div class="${(cl+s).trim()}" style="width:${XCOL[j][1]}px" data-c="${j}"${j!==0&&j!==6&&v.length>12?` title="${esc(v)}"`:""}>${h}</div>`}
 function xlPaint(){const vp=document.getElementById("xlv"),box=document.getElementById("xrs");if(!vp||!box)return;const T=XLV,n=T.view.length,vh=vp.clientHeight;
-const a=Math.max(0,Math.floor(T.st/RH)-4),b=Math.min(n-1,Math.ceil((T.st+vh)/RH)+4),cur=T.mt[T.mi];let h="";
+const a=Math.max(0,Math.floor(T.st/RH)-2),b=Math.min(n-1,Math.ceil((T.st+vh)/RH)+2),cur=T.mt[T.mi];let h="";
 for(let i=a;i<=b;i++){const r=T.view[i];h+=`<div class="xr${T.mset.has(r.id)?" xm":""}${cur===i&&q?" xcur":""}" style="top:${i*RH}px" data-i="${i}"><div class="xn">${i+1}</div>${r.c.map((_,j)=>xlCell(r,j)).join("")}</div>`}
 box.innerHTML=h}
 function xlShow(i){const vp=document.getElementById("xlv");if(!vp)return;const T=XLV;if(i*RH<T.st)vp.scrollTop=i*RH;else if(HH+(i+1)*RH>T.st+vp.clientHeight)vp.scrollTop=HH+(i+1)*RH-vp.clientHeight}
@@ -1315,8 +1315,10 @@ const ref=await lim(db.collection("deals").add({...f,org:"",phone:"",email:"",co
 XLV.dl[id]=ref.id;await lim(db.raw.doc("xl/"+r.d).update(new firebase.firestore.FieldPath("r",id,"dl"),ref.id));toast("Закупка добавлена в канбан: «Новая закупка»")}
 catch(x){toast("Не удалось создать закупку в канбане: "+(x.message||x.code||x))}})}
 /* подписка на таблицу */
-{const _oa=onAuth;onAuth=function(u){_oa.apply(this,arguments);if(u&&!SETUP&&db){XLV.ready=false;XLV.err="";unsubs.push(db.collection("xl").onSnapshot(s=>{XLV.docs=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));XLV.ready=true;XLV.err="";xlBuild();xlRefresh()},x=>{XLV.err=x.code||x.message||String(x);XLV.ready=true;xlRefresh()}))}}}
-function xlRefresh(){if(mode!=="app"||view!=="orgs"||XLV.mode!=="table")return;if(XLV.ed){xlIdx();xlPaint()}else render()}
+function xlSub(){if(XLV.sub||!db||!fbUser)return;XLV.sub=true;XLV.ready=false;XLV.err="";unsubs.push(db.collection("xl").onSnapshot(s=>{XLV.docs=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));XLV.ready=true;XLV.err="";xlBuild();xlRefresh()},x=>{XLV.err=x.code||x.message||String(x);XLV.ready=true;xlRefresh()}))}
+{const _oa=onAuth;onAuth=function(u){XLV.sub=false;XLV.ready=false;XLV.docs=new Map();_oa.apply(this,arguments)}}
+function xlTot(){const el=document.getElementById("xlsum");if(!el)return;let sm=0,co=0,pr=0;XLV.rows[XLV.sh].forEach(r=>{const a=xlNum(r.c[4]);if(a!==null){sm+=a;co+=xlNum(r.c[5])||0;pr+=xlProfit(r)||0}});el.textContent="Лист: сумма "+rub(Math.round(sm))+" · затраты "+rub(Math.round(co))+" · прибыль "+rub(Math.round(pr))}
+let xlRt=0;function xlRefresh(){if(mode!=="app"||view!=="orgs"||XLV.mode!=="table")return;clearTimeout(xlRt);xlRt=setTimeout(()=>{const b=document.getElementById("xlb");if(b&&XLV.ready&&!XLV.err&&XLV.rows.some(a=>a.length)){xlIdx();b.style.height=XLV.view.length*RH+"px";xlPaint();xlTot()}else if(!XLV.ed)render()},150)}
 /* сохранение прокрутки при перерисовке и прокрутка к найденному */
 function qJump(){if(!q)return;const m=document.getElementById("main");if(!m)return;let t=null;
 if(view==="deals"&&kv==="kanban"){const b=m.querySelector(".board"),c=b&&b.querySelector(".card");if(c){const col=c.closest(".col"),br=b.getBoundingClientRect(),cr=col.getBoundingClientRect();b.scrollTo({left:b.scrollLeft+cr.left-br.left-16,behavior:"smooth"});t=c}}
