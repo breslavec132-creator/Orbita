@@ -1218,7 +1218,7 @@ const XNAMES=["Отказы","Завершены","Завершены 1"],XCOL=[
 const XW=XCOL.reduce((t,c)=>t+c[1],XN);
 const XLV={mode:"table",base:null,sh:0,docs:new Map(),rows:[[],[],[]],dl:{},ready:false,err:"",sel:null,ed:null,view:[],mset:new Set(),mt:[],mi:0,only:false,st:0,sl:0,pend:false,ver:0,mc:null,mcq:"",mcv:-1};
 let SCRQ=false;const CAPK=60,CAPL=300;
-const isLostD=d=>{const st=stages(),f=new Set([...((S.stat&&S.stat.won)||[]),...((S.stat&&S.stat.lost)||[]),...st.filter(x=>x[0]==="done"||x[0]==="lost"||/успеш|заверш|выигр|договор|провал|отказ|проигр|отмен/i.test(x[1])).map(x=>x[0])]);return f.has(d.stage)&&Date.now()-(d.stt||d.created||0)>3*864e5};
+const isLostD=d=>{const st=stages(),f=new Set([...((S.stat&&S.stat.won)||[]),...((S.stat&&S.stat.lost)||[]),...st.filter(x=>x[0]==="done"||x[0]==="lost"||/успеш|заверш|выигр|договор|провал|отказ|проигр|отмен/i.test(x[1])).map(x=>x[0])]);return f.has(d.stage)};
 const xlCan=()=>typeof pEditAll==="function"&&pEditAll();
 const xlNum=s=>{const v=parseFloat(String(s==null?"":s).replace(/\s/g,"").replace(",","."));return isNaN(v)?null:v};
 const xlProfit=r=>{const a=xlNum(r.c[4]);if(a===null)return"";return Math.round((a*(100-FEE)/100-(xlNum(r.c[5])||0))*100)/100};
