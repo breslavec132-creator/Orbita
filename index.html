@@ -389,7 +389,7 @@ if(kv==="list")return head+`<div class="wrap">${l.length?`<table><tr><th>№</th
 return head+`<div class="board">${ST.map(([k,n,c])=>{const a=l.filter(d=>d.stage===k);return `<div class="col" data-s="${k}" style="--c:${c}"><div class="hd"><span>${esc(n)}</span><b>${a.length}</b></div><div class="cs"><span>${rub(a.reduce((t,d)=>t+(+d.amount||0),0))}</span><button class="q" onclick="openDeal(null,'${k}')" aria-label="Добавить закупку в этап">+</button></div><div class="body">${a.slice(0,q?400:CAPK).map(d=>`<div class="card${d.nc?" nc-"+d.nc:""}" draggable="true" data-id="${d.id}"${mgrStripe(d.manager)} onclick="openDeal('${d.id}')"><div class="ch"><div class="ct">${esc(((d.num||"")+" "+(d.title||"")).trim()||"Без названия")}</div></div><div class="amt">${d.amount?rub(d.amount):"<span class='mu'>Сумма не указана</span>"}</div>${d.cost?`<div class="mgl">Маржа ${rub(Math.round(mgCalc(d).margin))}</div>`:""}${d.org?`<div class="org">${orgLink(d)}</div>`:""}${d.note?`<div class="cnl nc-${d.nc||"none"}">${esc(d.note)}</div>`:""}${odBadge(d)}<div class="mu">${rel(d.created)}</div>${d.due?`<div class="mu cf">Дата завершения</div><div class="bxv${d.due<new Date().toISOString().slice(0,10)&&!["done","lost"].includes(d.stage)?" od":""}${isDueToday(d)?" td":""}">${isDueToday(d)?"🚨":"📅"} ${fmtD(d.due)}</div>`:""}<div class="bxr"><div><div class="mu cf">Ответственный</div><div class="rs bxv">${av(d.manager)} ${esc(U(d.manager)?.name||"Не назначен")}</div></div><div class="bxi"><span class="bxn">${+d.cc||0}</span><i class="${d.phone?"on":""}"><svg viewBox="0 0 24 24"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.6 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.6 3.6a1 1 0 0 1-.25 1z"/></svg></i><i class="${d.email?"on":""}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></i><i class="${d.cc?"on":""}"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></i></div></div>${d.url?`<div class="mu cf">Ссылка</div><a class="bxl" href="${esc(d.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(d.url)}</a>`:""}${d.last?`<div class="last">💬 ${esc(d.last)}</div>`:""}</div>`).join("")}${a.length>CAPK&&!q?`<div class="mu" style="padding:10px;text-align:center">Показано ${CAPK} из ${a.length}. Остальные ищите через поиск вверху.</div>`:""}</div></div>`}).join("")}</div>`;
 }
 function statsView(){
-const nmS=re=>stages().filter(x=>re.test(x[1])||x[0]===(re.source[0]==="у"?"done":"lost")).map(x=>x[0]),ss={won:[...new Set([...((S.stat&&S.stat.won)||[]),...nmS(/успеш|заверш|выигр|договор/i)])],lost:[...new Set([...((S.stat&&S.stat.lost)||[]),...nmS(/провал|отказ|проигр|отмен/i)])]},base=seeAll()?S.deals:S.deals.filter(d=>d.manager===cur.id);
+const nmS=re=>stages().filter(x=>re.test(x[1])||x[0]===(re.source[0]==="у"?"done":"lost")).map(x=>x[0]),ss={won:stages().filter(x=>/успешн/i.test(x[1])).map(x=>x[0]),lost:stages().filter(x=>/провал/i.test(x[1])).map(x=>x[0])},base=seeAll()?S.deals:S.deals.filter(d=>d.manager===cur.id);
 const evT=d=>{const nm=stN(d.stage),h=(d.hist||[]).filter(x=>x.n===nm).pop();return h?h.t:(d.created||0)};
 const pf=t=>{if(sp==="all")return true;const n=new Date(),x=new Date(t);if(x.getFullYear()!==n.getFullYear())return false;if(sp==="m")return x.getMonth()===n.getMonth();if(sp==="q")return Math.floor(x.getMonth()/3)===Math.floor(n.getMonth()/3);return true};
 const isW=d=>ss.won.includes(d.stage),isL=d=>ss.lost.includes(d.stage);
@@ -479,7 +479,7 @@ function dnd(){
 let drag=null;
 document.querySelectorAll(".card").forEach(c=>c.ondragstart=e=>{drag=c.dataset.id;e.dataTransfer.setData("text/plain",drag)});
 document.querySelectorAll(".col").forEach(c=>{
-c.ondragover=e=>{e.preventDefault();c.classList.add("over")};
+c.ondragover=e=>{e.preventDefault();if(!c.classList.contains("over"))c.classList.add("over")};
 c.ondragleave=()=>c.classList.remove("over");
 c.ondrop=async e=>{e.preventDefault();c.classList.remove("over");if(!drag)return;const dd=S.deals.find(x=>x.id===drag);if(!(isAdmin()||pEditAll()||(dd&&dd.manager===cur.id)))return toast("Нет прав менять этап этой закупки");try{await moveStage(drag,c.dataset.s)}catch(x){toast("Не удалось переместить закупку")}};
 });
@@ -1218,7 +1218,8 @@ const XNAMES=["Отказы","Завершены","Завершены 1"],XCOL=[
 const XW=XCOL.reduce((t,c)=>t+c[1],XN);
 const XLV={mode:"table",base:null,sh:0,docs:new Map(),rows:[[],[],[]],dl:{},ready:false,err:"",sel:null,ed:null,view:[],mset:new Set(),mt:[],mi:0,only:false,st:0,sl:0,pend:false,ver:0,mc:null,mcq:"",mcv:-1};
 let SCRQ=false;const CAPK=60,CAPL=300;
-const isLostD=d=>{const st=stages(),f=new Set([...((S.stat&&S.stat.won)||[]),...((S.stat&&S.stat.lost)||[]),...st.filter(x=>x[0]==="done"||x[0]==="lost"||/успеш|заверш|выигр|договор|провал|отказ|проигр|отмен/i.test(x[1])).map(x=>x[0])]);return f.has(d.stage)};
+let _fk=null,_fs=null,_ft=null;
+const isLostD=d=>{if(_fk!==S.stages||_fs!==S.stat||_ft!==DEF){_fk=S.stages;_fs=S.stat;_ft=DEF;window._fset=new Set(stages().filter(x=>/успешн|провал/i.test(x[1])).map(x=>x[0]))}return window._fset.has(d.stage)};
 const xlCan=()=>typeof pEditAll==="function"&&pEditAll();
 const xlNum=s=>{const v=parseFloat(String(s==null?"":s).replace(/\s/g,"").replace(",","."));return isNaN(v)?null:v};
 const xlProfit=r=>{const a=xlNum(r.c[4]);if(a===null)return"";return Math.round((a*(100-FEE)/100-(xlNum(r.c[5])||0))*100)/100};
