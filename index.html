@@ -1250,6 +1250,14 @@ else if(RK)window.scrollTo(0,0);
 RK=key;if(jump){SCRQ=false;qJump()}}}
 </script>
 <style>
+@media (min-width:721px){.board>.col{flex:0 0 300px;width:300px;min-width:300px;max-width:300px}}
+.board>.col .body{min-width:0}
+.board .card{min-width:0;max-width:100%;overflow:hidden;overflow-wrap:anywhere;word-break:break-word}
+.board .card *{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.board .card .lnk,.board .card .cnl,.board .card .bxl,.board .card .org{white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.board .card .msel{max-width:150px}
+</style>
+<style>
 .dgh{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;background:var(--sf);color:var(--tx);border:2px solid var(--ac);border-radius:10px;padding:8px 12px;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:260px;font-weight:600;font-size:13px;will-change:transform}
 .card.dgs{opacity:.35}.dgb,.dgb *{user-select:none!important;cursor:grabbing!important}
 </style>
