@@ -389,7 +389,7 @@ if(kv==="list")return head+`<div class="wrap">${l.length?`<table><tr><th>№</th
 return head+`<div class="board">${ST.map(([k,n,c])=>{const a=l.filter(d=>d.stage===k);return `<div class="col" data-s="${k}" style="--c:${c}"><div class="hd"><span>${esc(n)}</span><b>${a.length}</b></div><div class="cs"><span>${rub(a.reduce((t,d)=>t+(+d.amount||0),0))}</span><button class="q" onclick="openDeal(null,'${k}')" aria-label="Добавить закупку в этап">+</button></div><div class="body">${a.map(d=>`<div class="card${d.nc?" nc-"+d.nc:""}" draggable="true" data-id="${d.id}"${mgrStripe(d.manager)} onclick="openDeal('${d.id}')"><div class="ch"><div class="ct">${esc(((d.num||"")+" "+(d.title||"")).trim()||"Без названия")}</div></div><div class="amt">${d.amount?rub(d.amount):"<span class='mu'>Сумма не указана</span>"}</div>${d.cost?`<div class="mgl">Маржа ${rub(Math.round(mgCalc(d).margin))}</div>`:""}${d.org?`<div class="org">${orgLink(d)}</div>`:""}${d.note?`<div class="cnl nc-${d.nc||"none"}">${esc(d.note)}</div>`:""}${odBadge(d)}<div class="mu">${rel(d.created)}</div>${d.due?`<div class="mu cf">Дата завершения</div><div class="bxv${d.due<new Date().toISOString().slice(0,10)&&!["done","lost"].includes(d.stage)?" od":""}${isDueToday(d)?" td":""}">${isDueToday(d)?"🚨":"📅"} ${fmtD(d.due)}</div>`:""}<div class="bxr"><div><div class="mu cf">Ответственный</div><div class="rs bxv">${av(d.manager)} ${esc(U(d.manager)?.name||"Не назначен")}</div></div><div class="bxi"><span class="bxn">${+d.cc||0}</span><i class="${d.phone?"on":""}"><svg viewBox="0 0 24 24"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.6 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.6 3.6a1 1 0 0 1-.25 1z"/></svg></i><i class="${d.email?"on":""}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></i><i class="${d.cc?"on":""}"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></i></div></div>${d.url?`<div class="mu cf">Ссылка</div><a class="bxl" href="${esc(d.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(d.url)}</a>`:""}${d.last?`<div class="last">💬 ${esc(d.last)}</div>`:""}</div>`).join("")}</div></div>`}).join("")}</div>`;
 }
 function statsView(){
-const ss={won:(S.stat&&S.stat.won)||["done"],lost:(S.stat&&S.stat.lost)||["lost"]},base=seeAll()?S.deals:S.deals.filter(d=>d.manager===cur.id);
+const nmS=re=>stages().filter(x=>re.test(x[1])||x[0]===(re.source[0]==="у"?"done":"lost")).map(x=>x[0]),ss={won:(S.stat&&S.stat.won)||nmS(/успеш|заверш|выигр|договор/i),lost:(S.stat&&S.stat.lost)||nmS(/провал|отказ|проигр|отмен/i)},base=seeAll()?S.deals:S.deals.filter(d=>d.manager===cur.id);
 const evT=d=>{const nm=stN(d.stage),h=(d.hist||[]).filter(x=>x.n===nm).pop();return h?h.t:(d.created||0)};
 const pf=t=>{if(sp==="all")return true;const n=new Date(),x=new Date(t);if(x.getFullYear()!==n.getFullYear())return false;if(sp==="m")return x.getMonth()===n.getMonth();if(sp==="q")return Math.floor(x.getMonth()/3)===Math.floor(n.getMonth()/3);return true};
 const isW=d=>ss.won.includes(d.stage),isL=d=>ss.lost.includes(d.stage);
@@ -1214,27 +1214,32 @@ requestAnimationFrame(tick)})()})();
 /* ===== ПРАВКИ 3: таблица в «Организациях», сохранение прокрутки, прокрутка к найденному ===== */
 const XNAMES=["Отказы","Завершены","Завершены 1"],XCOL=[["Закупка",104],["ИНН",112],["Содержание",260],["Плановая дата договора",150],["Сумма",110],["Затраты",110],["Прибыль (авто)",120],["Срок поставки",170],["Контакты",330],["Адрес",330]],RH=30,HH=34,XN=50;
 const XW=XCOL.reduce((t,c)=>t+c[1],XN);
-const XLV={mode:"table",sh:0,docs:new Map(),rows:[[],[],[]],dl:{},ready:false,err:"",sel:null,ed:null,view:[],mset:new Set(),mt:[],mi:0,only:false,st:0,sl:0,pend:false,ver:0,mc:null,mcq:"",mcv:-1};
+const XLV={mode:"table",base:null,sh:0,docs:new Map(),rows:[[],[],[]],dl:{},ready:false,err:"",sel:null,ed:null,view:[],mset:new Set(),mt:[],mi:0,only:false,st:0,sl:0,pend:false,ver:0,mc:null,mcq:"",mcv:-1};
 let SCRQ=false;
 const xlCan=()=>typeof pEditAll==="function"&&pEditAll();
 const xlNum=s=>{const v=parseFloat(String(s==null?"":s).replace(/\s/g,"").replace(",","."));return isNaN(v)?null:v};
 const xlProfit=r=>{const a=xlNum(r.c[4]);if(a===null)return"";return Math.round((a*(100-FEE)/100-(xlNum(r.c[5])||0))*100)/100};
 const xlF=v=>v===""||v==null?"":Number(v).toLocaleString("ru-RU");
-function xlBuild(){const sh=[[],[],[]];XLV.docs.forEach(d=>{const s=d.s|0;if(!sh[s])return;const r=d.r||{};for(const id in r){const x=r[id],c=[];for(let j=0;j<10;j++)c.push(x["c"+j]==null?"":String(x["c"+j]));sh[s].push({id,d:d.id,o:x.o||0,a:x.a||0,dl:x.dl||XLV.dl[id]||"",c})}});sh.forEach(a=>a.sort((a,b)=>a.o-b.o));XLV.rows=sh;XLV.ver++}
+const XP="https://market.mosreg.ru/Trade/ViewTrade/";
+const xlCA=a=>{const c=[];for(let j=0;j<10;j++)c.push(a&&a[j]!=null?String(a[j]):"");return c};
+function xlBuild(){const T=XLV;if(!T.base)return;const sh=[[],[],[]],seen=new Set(),mk=(ov,s,id)=>({id,s,d:id,o:ov.o!=null?ov.o:0,a:ov.a||0,dl:ov.dl||T.dl[id]||"",c:xlCA(ov.c)});
+T.base.forEach((a,s)=>a.forEach(r=>{seen.add(r.id);const ov=T.docs.get(r.id);if(!ov)sh[s].push(r);else if(!ov.del)sh[s].push(mk({...ov,o:ov.o!=null?ov.o:r.o},s,r.id))}));
+T.docs.forEach(ov=>{const s=ov.s|0;if(seen.has(ov.id)||ov.del||!sh[s]||!ov.c)return;sh[s].push(mk(ov,s,ov.id))});
+sh.forEach(a=>a.sort((a,b)=>a.o-b.o));T.rows=sh;T.ver++;T.ready=true}
+async function xlLoad(){const T=XLV;if(T.base||T.loading)return;T.loading=true;try{const bin=atob(document.getElementById("xlseed").textContent.trim()),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+const data=JSON.parse(await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).text());
+T.base=data.map((sh,s)=>sh.rows.map((row,k)=>({id:"r"+s+"_"+k,s,d:"r"+s+"_"+k,o:(k+1)*1000,a:0,dl:"",c:xlCA(row.map((v,j)=>j===0&&/^\d+$/.test(v)?XP+v:v))})));xlBuild();xlRefresh()}catch(x){T.err="не удалось прочитать данные: "+(x.message||x);T.base=[[],[],[]];xlBuild();xlRefresh()}T.loading=false}
 function xlMatch(){const T=XLV;if(T.mcq===q&&T.mcv===T.ver&&T.mc)return T.mc;T.mc=T.rows.map(a=>q?a.filter(r=>hit(r.c)).map(r=>r.id):[]);T.mcq=q;T.mcv=T.ver;return T.mc}
 function xlIdx(){const T=XLV,all=T.rows[T.sh],mc=xlMatch();T.mset=new Set(mc[T.sh]);T.view=T.only&&q?all.filter(r=>T.mset.has(r.id)):all;T.mt=[];if(q)T.view.forEach((r,i)=>{if(T.mset.has(r.id))T.mt.push(i)});if(T.mi>=T.mt.length)T.mi=0}
 function xlSw(){return `<span class="seg"><button class="btn ${XLV.mode==="table"?"sel":"ghost"}" onclick="XLV.mode='table';render()">Таблица</button><button class="btn ${XLV.mode==="list"?"sel":"ghost"}" onclick="XLV.mode='list';render()">Список организаций</button></span>`}
 function xlSheet(i){XLV.sh=i;XLV.sel=null;XLV.st=0;XLV.mi=0;render();const v=document.getElementById("xlv");if(v&&XLV.mt.length)xlGoto(0)}
 function xlOrgs(){
-const T=XLV,head=`<div class="tb"><h1>Организации</h1>${xlSw()}</div>`;xlSub();
-if(T.err)return head+`<div class="empty">Не удалось загрузить таблицу: ${esc(T.err)}<br><small>Если это «permission-denied», в правилах Firestore нужно разрешить коллекцию <b>xl</b> так же, как остальные (match /xl/{id}).</small></div>`;
-if(!T.ready)return head+`<div class="empty">Загружаю таблицу…</div>`;
-const total=T.rows.reduce((t,a)=>t+a.length,0);
-if(!total)return head+`<div class="empty">Таблица пока пуста.${isAdmin()?`<br><br><button class="btn" onclick="xlSeed()" id="xlsb">Загрузить данные из Excel (5 085 строк, 3 листа)</button><div class="mu" style="margin-top:8px">Делается один раз. Дальше таблицу можно редактировать прямо здесь.</div>`:" Руководитель может загрузить в неё данные."}</div>`;
+const T=XLV,head=`<div class="tb"><h1>Организации</h1>${xlSw()}</div>`;xlSub();xlLoad();if(!T.base)return head+`<div class="empty">Загружаю таблицу…</div>`;
+const warn=T.err?`<div class="mu" style="padding:0 16px 8px;color:var(--bad)">⚠ Правки пока не сохраняются в базу: ${esc(T.err)}. Если это «permission-denied», разрешите в правилах Firestore коллекцию <b>xl</b>.</div>`:"";
 if(SCRQ&&q){const mc=xlMatch();if(!mc[T.sh].length){const f=mc.findIndex(x=>x.length);if(f>=0){T.sh=f;T.st=0}}}
 xlIdx();const mc=xlMatch(),all=T.rows[T.sh],can=xlCan();
 let sm=0,co=0,pr=0;all.forEach(r=>{const a=xlNum(r.c[4]);if(a!==null){sm+=a;co+=xlNum(r.c[5])||0;pr+=xlProfit(r)||0}});
-return head+`<div class="xtl"><span class="seg">${XNAMES.map((n,i)=>`<button class="btn ${T.sh===i?"sel":"ghost"}" onclick="xlSheet(${i})">${n} <small>${T.rows[i].length}${q&&mc[i].length?" · найдено "+mc[i].length:""}</small></button>`).join("")}</span>
+return head+warn+`<div class="xtl"><span class="seg">${XNAMES.map((n,i)=>`<button class="btn ${T.sh===i?"sel":"ghost"}" onclick="xlSheet(${i})">${n} <small>${T.rows[i].length}${q&&mc[i].length?" · найдено "+mc[i].length:""}</small></button>`).join("")}</span>
 ${can?`<button class="btn ghost" onclick="xlAdd()">+ Строка</button><button class="btn ghost" onclick="xlDel()">Удалить строку</button>`:`<span class="mu">Только просмотр</span>`}
 <button class="btn ghost" onclick="xlExport()">⬇ Скачать .xlsx</button>
 ${q?`<span class="mu">Найдено на листе: <b>${T.mt.length}</b></span><button class="btn ghost" onclick="xlNext(-1)">▲</button><button class="btn ghost" onclick="xlNext(1)">▼</button><label class="ck" style="margin:0"><input type="checkbox" ${T.only?"checked":""} onchange="XLV.only=this.checked;XLV.st=0;render()">Только найденные</label>`:""}
@@ -1275,36 +1280,28 @@ async function xlCommit(save,di,dc){const T=XLV,e=T.ed;if(!e)return;T.ed=null;co
 if(di||dc){const i=T.view.findIndex(r=>r.id===e.id);if(i>=0){const ni=Math.max(0,Math.min(T.view.length-1,i+(di||0)));T.sel={id:T.view[ni].id,c:Math.max(0,Math.min(9,e.c+(dc||0)))};xlShow(ni)}}
 const vp=document.getElementById("xlv");if(vp)vp.focus({preventScroll:true});xlPaint();
 if(save&&v!==e.old)await xlSet(e.id,e.c,v);if(T.pend){T.pend=false;render()}}
-async function xlSet(id,c,v){const r=XLV.rows[XLV.sh].find(x=>x.id===id);if(!r)return;r.c[c]=v;xlPaint();
-try{await lim(db.raw.doc("xl/"+r.d).update(new firebase.firestore.FieldPath("r",id,"c"+c),v))}catch(x){toast("Не удалось сохранить ячейку: "+(x.message||x.code||x))}
-if(r.a||r.dl)xlDealSync(r)}
 const xlNewId=()=>"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-function xlSlot(after){const T=XLV,all=T.rows[T.sh],at=after>=0?after:all.length-1,a=all[at],b=all[at+1];return{o:a?(b?(a.o+b.o)/2:a.o+1000):1000,d:a?a.d:"s"+T.sh+"_0"}}
-async function xlAdd(){if(!xlCan())return;const T=XLV,all=T.rows[T.sh],at=T.sel?all.findIndex(r=>r.id===T.sel.id):-1,sl=xlSlot(at),id=xlNewId(),dd=T.docs.get(sl.d);
-try{await lim(db.raw.doc("xl/"+sl.d).set({s:T.sh,n:dd?dd.n:0,r:{[id]:{o:sl.o,a:1}}},{merge:true}));T.sel={id,c:1};T.only=false;await new Promise(r=>setTimeout(r,200));const i=T.view.findIndex(r=>r.id===id);if(i>=0)xlShow(i);xlPaint();xlEdit()}catch(x){toast("Не удалось добавить строку: "+(x.message||x.code||x))}}
+const xlDoc=r=>({v:2,s:r.s,o:r.o,a:r.a||0,dl:r.dl||"",c:r.c});
+const xlSave=r=>lim(db.raw.doc("xl/"+r.id).set(xlDoc(r)));
+async function xlSet(id,c,v){const r=XLV.rows[XLV.sh].find(x=>x.id===id);if(!r)return;r.c[c]=v;xlPaint();
+try{await xlSave(r)}catch(x){toast("Не удалось сохранить ячейку: "+(x.message||x.code||x))}
+if(r.a||r.dl)xlDealSync(r)}
+async function xlAdd(){if(!xlCan())return;const T=XLV,all=T.rows[T.sh],at=T.sel?all.findIndex(r=>r.id===T.sel.id):all.length-1,a=all[at],b=all[at+1];
+const r={id:xlNewId(),s:T.sh,o:a?(b?(a.o+b.o)/2:a.o+1000):1000,a:1,dl:"",c:xlCA()};T.docs.set(r.id,{id:r.id,...xlDoc(r)});T.only=false;xlBuild();T.sel={id:r.id,c:1};xlIdx();const b2=document.getElementById("xlb");if(b2)b2.style.height=T.view.length*RH+"px";const i=T.view.findIndex(x=>x.id===r.id);if(i>=0)xlShow(i);xlPaint();xlEdit();
+try{await xlSave(r)}catch(x){toast("Не удалось добавить строку: "+(x.message||x.code||x))}}
 async function xlDel(){if(!xlCan())return;const T=XLV;if(!T.sel)return toast("Сначала выберите строку (кликните по ячейке)");const r=T.rows[T.sh].find(x=>x.id===T.sel.id);if(!r)return;
 if((await dlgAsk("Удалить выбранную строку («"+(r.c[2]||r.c[1]||r.c[8]||"пустая").slice(0,40)+"»)?",["Отмена","Удалить"]))!==1)return;
-try{T.sel=null;await lim(db.raw.doc("xl/"+r.d).update(new firebase.firestore.FieldPath("r",r.id),firebase.firestore.FieldValue.delete()))}catch(x){toast("Не удалось удалить: "+(x.message||x.code||x))}}
+try{T.sel=null;T.docs.set(r.id,{id:r.id,v:2,s:r.s,del:1});xlBuild();xlRefresh();await lim(db.raw.doc("xl/"+r.id).set({v:2,s:r.s,del:1}))}catch(x){toast("Не удалось удалить: "+(x.message||x.code||x))}}
 async function xlPaste(e){const T=XLV;if(T.ed||!T.sel||!xlCan())return;const txt=(e.clipboardData.getData("text/plain")||"").replace(/\r/g,"");if(!txt)return;e.preventDefault();
 let rows=txt.split("\n");if(rows.length>1&&rows[rows.length-1]==="")rows.pop();rows=rows.map(x=>x.split("\t"));if(rows.length*rows[0].length>3000)return toast("Слишком много ячеек для вставки");
-const i0=T.view.findIndex(r=>r.id===T.sel.id);if(i0<0)return;const per={},add={};let last=T.view[T.view.length-1];
-rows.forEach((cells,k)=>{const r=T.view[i0+k];cells.forEach((v,m)=>{const c=T.sel.c+m;if(c>9||c===6)return;
-if(r){(per[r.d]=per[r.d]||[]).push(new firebase.firestore.FieldPath("r",r.id,"c"+c),v)}
-else{const key=k;(add[key]=add[key]||{})["c"+c]=v}})});
-try{for(const d in per){const a=per[d];for(let p=0;p<a.length;p+=200)await lim(db.raw.doc("xl/"+d).update(...a.slice(p,p+200)))}
-const keys=Object.keys(add).map(Number).sort((a,b)=>a-b);if(keys.length){const all=T.rows[T.sh];let o=all.length?all[all.length-1].o:0;const d=all.length?all[all.length-1].d:"s"+T.sh+"_0",m={};keys.forEach(k=>{o+=1000;m[xlNewId()]={o,...add[k]}});await lim(db.raw.doc("xl/"+d).set({s:T.sh,n:(T.docs.get(d)||{n:0}).n,r:m},{merge:true}))}
-toast("Вставлено")}catch(x){toast("Не удалось вставить: "+(x.message||x.code||x))}}
+const i0=T.view.findIndex(r=>r.id===T.sel.id);if(i0<0)return;const all=T.rows[T.sh],out=[];let last=all[all.length-1];
+rows.forEach((cells,k)=>{let r=T.view[i0+k];if(!r){r={id:xlNewId(),s:T.sh,o:(last?last.o:0)+1000,a:0,dl:"",c:xlCA()};last=r;all.push(r)}
+cells.forEach((v,m)=>{const c=T.sel.c+m;if(c<=9&&c!==6)r.c[c]=v});out.push(r)});
+try{for(let p=0;p<out.length;p+=300){const bt=db.raw.batch();out.slice(p,p+300).forEach(r=>bt.set(db.raw.doc("xl/"+r.id),xlDoc(r)));await lim(bt.commit())}toast("Вставлено");xlIdx();xlPaint()}catch(x){toast("Не удалось вставить: "+(x.message||x.code||x))}}
 async function xlExport(){try{toast("Готовлю файл…");await loadLib("xlsx");const wb=XLSX.utils.book_new();
 XNAMES.forEach((n,s)=>{const aoa=[XCOL.map(c=>c[0].replace(" (авто)",""))];XLV.rows[s].forEach(r=>aoa.push(r.c.map((v,j)=>j===6?(xlProfit(r)===""?"":xlProfit(r)):(j===4||j===5)&&xlNum(v)!==null?xlNum(v):v)));
 const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=XCOL.map(c=>({wch:Math.round(c[1]/7)}));XLV.rows[s].forEach((r,i)=>{if(/^https?:/.test(r.c[0])){const ref=XLSX.utils.encode_cell({r:i+1,c:0});if(ws[ref])ws[ref].l={Target:r.c[0]}}});XLSX.utils.book_append_sheet(wb,ws,n)});
 dlBlob("Организации_закупки.xlsx",XLSX.write(wb,{bookType:"xlsx",type:"array"}),"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");toast("Файл скачан")}catch(x){toast("Не удалось сформировать файл: "+(x.message||x))}}
-async function xlSeed(){if(!isAdmin())return;if((await dlgAsk("Загрузить в таблицу данные из вашего Excel (5 085 строк)?",["Отмена","Загрузить"]))!==1)return;
-const b=document.getElementById("xlsb");if(b){b.disabled=true;b.textContent="Загружаю…"}
-try{const bin=atob(document.getElementById("xlseed").textContent.trim()),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
-const txt=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).text(),data=JSON.parse(txt),P="https://market.mosreg.ru/Trade/ViewTrade/",docs=[];
-data.forEach((sh,s)=>{for(let n=0,k=0;k<sh.rows.length;n++){const r={};for(let m=0;m<150&&k<sh.rows.length;m++,k++){const row=sh.rows[k],o={o:(k+1)*1000};row.forEach((v,j)=>{if(j===0&&/^\d+$/.test(v))v=P+v;if(v!=="")o["c"+j]=v});r["r"+s+"_"+k]=o}docs.push(["s"+s+"_"+n,{s,n,r}])}});
-for(let i=0;i<docs.length;i+=10){const bt=db.raw.batch();docs.slice(i,i+10).forEach(([id,d])=>bt.set(db.raw.doc("xl/"+id),d));await bt.commit()}
-toast("Данные загружены")}catch(x){toast("Не удалось загрузить: "+(x.message||x.code||x));if(b){b.disabled=false;b.textContent="Повторить загрузку"}}}
 /* закупка из таблицы сразу попадает в канбан, в первый этап */
 const xlRuD=t=>{const m=String(t||"").match(/(\d{2})\.(\d{2})\.(\d{4})/);return m?m[3]+"-"+m[2]+"-"+m[1]:""};
 function xlDealSync(r){const id=r.id;XLV.q=XLV.q||{};XLV.q[id]=(XLV.q[id]||Promise.resolve()).then(async()=>{
@@ -1312,13 +1309,12 @@ const c=r.c,m=c[0].match(/(\d{5,})\/?$/),f={num:m?m[1]:"",title:c[2],inn:c[1],ur
 try{if(dl){await lim(db.doc("deals/"+dl).update(f));return}
 if(!(f.num||f.title||f.inn||f.url))return;const t=Date.now(),sid=stages()[0][0];
 const ref=await lim(db.collection("deals").add({...f,org:"",phone:"",email:"",contacts:[],stage:sid,manager:cur.id,created:t,stt:t,hist:[{t,a:cur.name,e:"c",n:stN(sid)}]}));
-XLV.dl[id]=ref.id;await lim(db.raw.doc("xl/"+r.d).update(new firebase.firestore.FieldPath("r",id,"dl"),ref.id));toast("Закупка добавлена в канбан: «Новая закупка»")}
+XLV.dl[id]=ref.id;r.dl=ref.id;await lim(db.raw.doc("xl/"+id).set({dl:ref.id},{merge:true}));toast("Закупка добавлена в канбан: «Новая закупка»")}
 catch(x){toast("Не удалось создать закупку в канбане: "+(x.message||x.code||x))}})}
-/* подписка на таблицу */
-function xlSub(){if(XLV.sub||!db||!fbUser)return;XLV.sub=true;XLV.ready=false;XLV.err="";unsubs.push(db.collection("xl").onSnapshot(s=>{XLV.docs=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));XLV.ready=true;XLV.err="";xlBuild();xlRefresh()},x=>{XLV.err=x.code||x.message||String(x);XLV.ready=true;xlRefresh()}))}
-{const _oa=onAuth;onAuth=function(u){XLV.sub=false;XLV.ready=false;XLV.docs=new Map();_oa.apply(this,arguments)}}
+function xlSub(){const T=XLV;if(T.sub&&unsubs.includes(T.us))return;if(!db||!fbUser)return;T.sub=true;T.err="";
+T.us=db.raw.collection("xl").where("v","==",2).onSnapshot(s=>{T.docs=new Map(s.docs.map(d=>[d.id,{id:d.id,...d.data()}]));T.err="";if(T.base){xlBuild();xlRefresh()}},x=>{T.err=x.code||x.message||String(x);xlRefresh()});unsubs.push(T.us)}
 function xlTot(){const el=document.getElementById("xlsum");if(!el)return;let sm=0,co=0,pr=0;XLV.rows[XLV.sh].forEach(r=>{const a=xlNum(r.c[4]);if(a!==null){sm+=a;co+=xlNum(r.c[5])||0;pr+=xlProfit(r)||0}});el.textContent="Лист: сумма "+rub(Math.round(sm))+" · затраты "+rub(Math.round(co))+" · прибыль "+rub(Math.round(pr))}
-let xlRt=0;function xlRefresh(){if(mode!=="app"||view!=="orgs"||XLV.mode!=="table")return;clearTimeout(xlRt);xlRt=setTimeout(()=>{const b=document.getElementById("xlb");if(b&&XLV.ready&&!XLV.err&&XLV.rows.some(a=>a.length)){xlIdx();b.style.height=XLV.view.length*RH+"px";xlPaint();xlTot()}else if(!XLV.ed)render()},150)}
+let xlRt=0;function xlRefresh(){if(mode!=="app"||view!=="orgs"||XLV.mode!=="table")return;clearTimeout(xlRt);xlRt=setTimeout(()=>{const b=document.getElementById("xlb");if(b&&XLV.ready){xlIdx();b.style.height=XLV.view.length*RH+"px";xlPaint();xlTot()}else if(!XLV.ed)render()},150)}
 /* сохранение прокрутки при перерисовке и прокрутка к найденному */
 function qJump(){if(!q)return;const m=document.getElementById("main");if(!m)return;let t=null;
 if(view==="deals"&&kv==="kanban"){const b=m.querySelector(".board"),c=b&&b.querySelector(".card");if(c){const col=c.closest(".col"),br=b.getBoundingClientRect(),cr=col.getBoundingClientRect();b.scrollTo({left:b.scrollLeft+cr.left-br.left-16,behavior:"smooth"});t=c}}
